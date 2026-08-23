@@ -1,0 +1,11 @@
+/* File-safe interaction states: visual styling does not depend on JavaScript imports. */
+.loader{transition:transform .65s cubic-bezier(.7,0,.2,1)}
+.loader.done{transform:translateY(-101%)}
+.section-head h2,.manifesto h2,.contact h2{transform:translateY(54px);opacity:0;transition:transform .9s cubic-bezier(.2,.8,.2,1),opacity .8s;will-change:transform,opacity}
+.section-head h2.in-view,.manifesto h2.in-view,.contact h2.in-view{transform:none;opacity:1}
+.work figure{transform:scale(.92);clip-path:inset(10% 8%);transition:transform 1s cubic-bezier(.2,.8,.2,1),clip-path 1s cubic-bezier(.2,.8,.2,1)}
+.work figure.in-view{transform:scale(1);clip-path:inset(0)}
+
+/* Contact form additions — preserves the existing visual language. */
+.contact select{width:100%;appearance:none;border:0;border-radius:0;background:transparent;color:#fff;font:500 14px Manrope,Arial,sans-serif;outline:0;cursor:pointer}
+.contact select:invalid{color:#777}.contact select option{background:#111;color:#fff}.contact label span small{color:#777;font:inherit;letter-spacing:0}.contact .honeypot{position:absolute!important;left:-10000px!important;width:1px!important;height:1px!important;overflow:hidden!important}.turnstile-wrap{min-height:65px;padding:5px 0}.contact button:disabled{cursor:wait;opacity:.75}.form-success,.form-error{line-height:1.5}.form-success small,.form-error small{display:block;margin-top:8px;color:#aaa;font:400 11px/1.5 Manrope,Arial,sans-serif}.form-error{display:none;color:#ff6940;font:500 11px 'DM Mono',monospace}.form-error.show{display:block}

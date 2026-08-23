@@ -1,0 +1,2 @@
+@media(min-width:701px){.portfolio-page,.portfolio-page a,.portfolio-page button,.portfolio-page input{cursor:none}}
+.portfolio-card-media img{transform:translateY(var(--parallax,0)) scale(1)}

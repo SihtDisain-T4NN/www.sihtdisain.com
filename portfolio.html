@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="et">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#050505" />
+    <meta name="description" content="Siht Disaini valitud brändingu, veebi, pakendi ja digitaalsete kogemuste portfolio." />
+    <title>Portfoolio — SIHT DISAIN</title>
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,700;0,800;1,700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="./src/style.css" />
+    <link rel="stylesheet" href="./src/portfolio.css" />
+    <link rel="stylesheet" href="./src/portfolio-overrides.css" />
+  </head>
+  <body class="portfolio-page">
+    <div class="portfolio-loader" aria-hidden="true"><b>SIHT</b><span>WORK / <i>00</i></span></div>
+    <div class="portfolio-transition" aria-hidden="true"></div>
+    <div class="portfolio-cursor" aria-hidden="true"><span></span><b>VIEW ↗</b></div>
+    <div class="portfolio-progress" aria-hidden="true"><i></i></div>
+    <nav class="nav portfolio-nav"><a class="logo" href="./index.html">SIHT<span>®</span></a><div class="nav-links"><a href="./index.html">Avaleht</a><a class="is-current" href="./portfolio.html">Portfoolio</a><a href="./index.html#services">Teenused</a><a href="./index.html#contact">Kontakt</a></div><a class="menu-dot" href="./index.html#contact"><i></i> Võta ühendust</a></nav>
+    <main>
+      <section class="portfolio-hero">
+        <div class="portfolio-hero-glow"></div>
+        <p class="portfolio-kicker">SIHT DISAIN / PORTFOLIO <span>01—12</span></p>
+        <h1><span>TÖÖD,</span><span>MIS RÄÄGIVAD</span><span><i>ENDA EEST.</i></span></h1>
+        <div class="portfolio-hero-bottom"><p>Valik projekte, millele oleme andnud<br/>selgema visuaalse suuna.</p><a href="#all-work" class="portfolio-scroll-cue">KERIGE ALLA <b>↓</b></a></div>
+      </section>
+
+      <section class="portfolio-featured" aria-labelledby="featured-title">
+        <div class="portfolio-section-label"><p class="eyebrow">01 — FOCUS</p><h2 id="featured-title">VALITUD<br/><i>SUUNAD.</i></h2></div>
+        <div class="portfolio-featured-rail"><div class="portfolio-featured-track" data-featured-track></div></div>
+      </section>
+
+      <section class="portfolio-all" id="all-work" aria-labelledby="all-work-title">
+        <header class="portfolio-all-header"><div><p class="eyebrow">02 — KÕIK TÖÖD</p><h2 id="all-work-title">MIS ON<br/><i>JÄRGMISEKS?</i></h2></div><label class="portfolio-search"><span>OTSING</span><input type="search" placeholder="Otsi projekti..." aria-label="Otsi projektide seast" /></label></header>
+        <div class="portfolio-filters" aria-label="Filtreeri portfooliot"><button class="is-active" data-filter="all">KÕIK</button><button data-filter="branding">BRÄNDING</button><button data-filter="logo">LOGO</button><button data-filter="packaging">PAKEND</button><button data-filter="web">WEB</button><button data-filter="uiux">UI/UX</button><button data-filter="campaign">KAMPAANIA</button><button data-filter="graphic">GRAAFIKA</button></div>
+        <p class="portfolio-result-count" aria-live="polite"></p>
+        <div class="portfolio-grid" data-project-grid></div>
+      </section>
+    </main>
+    <footer><div class="footer-top"><a href="./index.html" class="footer-logo">SIHT <i>DISAIN</i></a><p>Disain, mis annab suuna.<br/>Tallinn, Eesti</p></div><div class="footer-bottom"><span>© 2026 SIHT DISAIN</span><div><a href="https://www.instagram.com/t8nnnn4/" target="_blank" rel="noopener noreferrer">Instagram</a><a href="https://www.behance.net/ormaktaaniel" target="_blank" rel="noopener noreferrer">Behance</a><a href="https://ee.linkedin.com/in/taaniel-ormak-023a10414" target="_blank" rel="noopener noreferrer">LinkedIn</a><a href="mailto:info@sihtdisain.ee">E-mail</a></div></div></footer>
+    <script src="./data/projects.js"></script>
+    <script src="./src/portfolio.js"></script>
+  </body>
+</html>
