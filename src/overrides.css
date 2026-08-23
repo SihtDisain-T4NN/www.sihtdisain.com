@@ -54,7 +54,7 @@
   .strip-intro h2,.direction-finder-intro h2,.testimonial h2,.faq h2{margin:7vw 0 0!important;padding:0!important;line-height:.98!important;letter-spacing:-.08em!important}
   .strip-intro p:last-child{margin-top:8vw}
   .statement{min-height:92svh;padding:22vw 20px}
-  .statement h2{font-size:15vw!important;line-height:.87!important;padding:0!important}
+  .statement h2{font-size:15vw!important;line-height:.87!important;margin:0!important;padding:0!important}
   .statement .eyebrow{margin-top:9vw}
   .process-number{font-size:29vw;line-height:.78}
   .process-steps article{min-height:0;padding:13vw 0}
