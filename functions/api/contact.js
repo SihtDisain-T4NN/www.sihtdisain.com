@@ -4,7 +4,20 @@ const ALLOWED_SERVICES = new Set([
   'Web design',
   'UI / UX',
   'Digitaalsed kampaaniad',
-  'Graafiline disain'
+  'Graafiline disain',
+  'Vajan suunamist'
+]);
+const ALLOWED_BUDGETS = new Set([
+  'Alla 1 500 €',
+  '1 500 – 3 000 €',
+  '3 000 – 6 000 €',
+  '6 000 €+'
+]);
+const ALLOWED_TIMELINES = new Set([
+  'Esimesel võimalusel',
+  'Järgmise 1–2 kuu jooksul',
+  'Järgmise 3–6 kuu jooksul',
+  'Uurin võimalusi'
 ]);
 
 const MAX_REQUESTS_PER_HOUR = 3;
@@ -41,6 +54,8 @@ export async function onRequestPost({ request, env }) {
     email: clean(body.email, 254).toLowerCase(),
     company: clean(body.company, 160),
     service: clean(body.service, 80),
+    budget: clean(body.budget, 80),
+    timeline: clean(body.timeline, 100),
     message: clean(body.message, 5000),
     turnstileToken: clean(body.turnstileToken, 2048)
   };
@@ -79,7 +94,7 @@ function clean(value, maxLength) {
     : '';
 }
 
-function isValidSubmission({ name, email, company, service, message, turnstileToken }) {
+function isValidSubmission({ name, email, company, service, budget, timeline, message, turnstileToken }) {
   const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   return name.length >= 2 && name.length <= 120
     && emailPattern.test(email)
@@ -87,6 +102,10 @@ function isValidSubmission({ name, email, company, service, message, turnstileTo
     && company.length <= 160
     && ALLOWED_SERVICES.has(service)
     && service.length <= 80
+    && (!budget || ALLOWED_BUDGETS.has(budget))
+    && budget.length <= 80
+    && (!timeline || ALLOWED_TIMELINES.has(timeline))
+    && timeline.length <= 100
     && message.length >= 10
     && message.length <= 5000
     && turnstileToken.length > 0
@@ -130,6 +149,8 @@ function sendEmail(submission, env) {
     `E-mail: ${submission.email}`,
     `Ettevõte: ${submission.company || '—'}`,
     `Soovitud teenus: ${submission.service}`,
+    `Eelarvevahemik: ${submission.budget || '—'}`,
+    `Soovitud ajaraam: ${submission.timeline || '—'}`,
     '',
     'Sõnum:',
     submission.message
