@@ -20,7 +20,7 @@ const observer = new IntersectionObserver(entries => entries.forEach(entry => {
     entry.target.querySelectorAll('[data-count]').forEach(el => { const end = Number(el.dataset.count), start = performance.now(), duration = 1500; const tick = now => { el.textContent = Math.round(Math.min(1, (now-start)/duration) * end); if (now-start < duration) requestAnimationFrame(tick); }; requestAnimationFrame(tick); });
   }
 }), { threshold: .17 });
-document.querySelectorAll('.section-head h2, .manifesto h2, .strip-intro h2, .statement h2, .direction-finder-intro h2, .faq h2, .contact h2, .process-steps h2, .work figure, .stats').forEach(el => observer.observe(el));
+document.querySelectorAll('.section-head h2, .manifesto h2, .strip-intro h2, .statement h2, .direction-finder-intro h2, .testimonial h2, .faq h2, .contact h2, .process-steps h2, .work figure, .stats').forEach(el => observer.observe(el));
 const processObserver = new IntersectionObserver(entries => entries.forEach(entry => { if (entry.isIntersecting) activateStep([...document.querySelectorAll('.process-steps article')].indexOf(entry.target)); }), { threshold: .6 });
 document.querySelectorAll('.process-steps article').forEach(step => processObserver.observe(step));
 function activateStep(index) { if (index < 0) return; document.querySelectorAll('.process-steps article').forEach((el, i) => el.classList.toggle('active', i === index)); document.querySelector('.process-number').textContent = `0${index + 1}`; }
