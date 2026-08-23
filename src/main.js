@@ -62,6 +62,24 @@ document.querySelectorAll('[data-service-choice]').forEach(choice => choice.addE
   document.querySelector('#contact')?.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'start' });
   window.setTimeout(() => contactForm.querySelector('input[name="name"]')?.focus({ preventScroll: true }), reduced ? 0 : 620);
 }));
+
+const ibanCopyButton = document.querySelector('[data-copy-value]');
+ibanCopyButton?.addEventListener('click', async () => {
+  const value = ibanCopyButton.dataset.copyValue;
+  if (!value) return;
+
+  try {
+    await navigator.clipboard.writeText(value);
+    ibanCopyButton.classList.add('is-copied');
+    ibanCopyButton.innerHTML = 'KOPEERITUD ✓';
+    window.setTimeout(() => {
+      ibanCopyButton.classList.remove('is-copied');
+      ibanCopyButton.innerHTML = 'KOPEERI IBAN <b aria-hidden="true">↗</b>';
+    }, 2200);
+  } catch {
+    ibanCopyButton.innerHTML = 'VALI JA KOPEERI';
+  }
+});
 contactForm?.addEventListener('submit', async event => {
   event.preventDefault();
   if (!contactForm.checkValidity()) { contactForm.reportValidity(); return; }
