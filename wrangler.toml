@@ -1,3 +1,6 @@
 name = "siht-disain"
 compatibility_date = "2026-08-23"
 pages_build_output_dir = "."
+[[kv_namespaces]]
+binding = "CONTACT_RATE_LIMIT"
+id = "1687adac3f12494cbfe0c9f1366229cf"
