@@ -1,5 +1,6 @@
 const ALLOWED_SERVICES = new Set([
   'Logo & bränding',
+  'Bränd + veeb',
   'Pakendi disain',
   'Web design',
   'UI / UX',
