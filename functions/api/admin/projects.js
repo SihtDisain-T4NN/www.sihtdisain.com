@@ -51,6 +51,8 @@ function validateProjects(items) {
     const category = cleanText(item.category, 30);
     const year = cleanText(item.year, 4);
     const description = cleanText(item.description, 520);
+    const seoTitle = cleanText(item.seoTitle, 70);
+    const seoDescription = cleanText(item.seoDescription, 160);
     const image = cleanImage(item.image);
     const tags = normaliseTags(item.tags);
     const gallery = normaliseGallery(item.gallery);
@@ -65,6 +67,8 @@ function validateProjects(items) {
       categoryLabel: CATEGORIES[category],
       year,
       description,
+      seoTitle,
+      seoDescription,
       image,
       featured: Boolean(item.featured),
       size: SIZES.has(item.size) ? item.size : 'standard',
