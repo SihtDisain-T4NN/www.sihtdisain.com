@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="et">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#090909" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>Haldusala — SIHT DISAIN</title>
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,700;1,700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="./src/admin.css?v=20260824-1" />
+  </head>
+  <body>
+    <main class="admin-shell">
+      <header class="admin-topbar">
+        <a class="admin-logo" href="./index.html">SIHT<span>®</span></a>
+        <a class="admin-back" href="./portfolio.html">← VAATA PORTFOOLIOT</a>
+      </header>
+
+      <section class="admin-login" data-admin-login>
+        <p class="admin-kicker">SIHT DISAIN / HALDUSALA</p>
+        <h1>MUUDA<br/><i>PORTFOOLIOT.</i></h1>
+        <p class="admin-intro">Lisa projekte, vaheta pilte ja kirjuta tekste otse veebilehel. Sisselogimiskood saadetakse omaniku postkasti.</p>
+        <form class="admin-code-request" data-code-request>
+          <button class="admin-button" type="submit">SAADA SISSELOGIMISKOOD <b>↗</b></button>
+        </form>
+        <form class="admin-code-verify" data-code-verify hidden>
+          <label for="admin-code">SISSELOGIMISKOOD</label>
+          <div class="admin-code-row"><input id="admin-code" name="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" placeholder="000000" required /><button class="admin-button" type="submit">SISENE <b>→</b></button></div>
+          <button class="admin-text-button" type="button" data-request-new-code>SAADA UUS KOOD</button>
+        </form>
+        <p class="admin-status" data-login-status aria-live="polite"></p>
+      </section>
+
+      <section class="admin-app" data-admin-app hidden>
+        <header class="admin-app-head">
+          <div><p class="admin-kicker">OMANIKU VAADE</p><h1>PORTFOLIO<br/><i>HALDUS.</i></h1></div>
+          <div class="admin-actions"><a class="admin-outline" href="./portfolio.html" target="_blank" rel="noopener">AVA LIVE LEHT ↗</a><button class="admin-outline" type="button" data-logout>LOGI VÄLJA</button></div>
+        </header>
+
+        <div class="admin-layout">
+          <aside class="admin-project-panel">
+            <div class="admin-panel-top"><p>PROJEKTID <span data-project-count>00</span></p><button class="admin-add" type="button" data-new-project>+ UUS</button></div>
+            <div class="admin-project-list" data-project-list></div>
+          </aside>
+
+          <section class="admin-editor" data-project-editor>
+            <div class="admin-empty-editor" data-empty-editor><p>VALI VASAKULT PROJEKT<br/>VÕI LOO <i>UUS.</i></p></div>
+            <form class="admin-form" data-project-form hidden>
+              <header class="admin-form-head"><div><p class="admin-kicker" data-form-mode>PROJEKT</p><h2 data-form-title>UUS PROJEKT</h2></div><a class="admin-preview" data-project-preview href="#" target="_blank" rel="noopener" hidden>AVA PROJEKTILEHT ↗</a></header>
+
+              <div class="admin-form-grid">
+                <label class="admin-field admin-field-wide">PROJEKTI NIMI<input name="title" maxlength="90" required placeholder="Näiteks NOVA" /></label>
+                <label class="admin-field">KATEGOORIA<select name="category" required><option value="branding">Bränding</option><option value="logo">Logo</option><option value="packaging">Pakend</option><option value="web">Veeb</option><option value="uiux">UI / UX</option><option value="campaign">Kampaania</option><option value="graphic">Graafika</option></select></label>
+                <label class="admin-field">AASTA<input name="year" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" required placeholder="2026" /></label>
+                <label class="admin-field admin-field-wide">LÜHIKIRJELDUS<textarea name="description" rows="3" maxlength="520" required placeholder="Üks lühike kirjeldus, mis läheb portfolio kaardile."></textarea></label>
+                <label class="admin-field admin-field-wide">TEENUSED / MÄRKSÕNAD<input name="tags" maxlength="320" required placeholder="Bränding, Strateegia, Identiteet" /><small>Eralda komaga.</small></label>
+              </div>
+
+              <section class="admin-block"><div class="admin-block-head"><p>KAANEPILT</p><span>See pilt läheb portfolio kaardile.</span></div><div class="admin-image-control"><div class="admin-image-preview" data-cover-preview><span>PILTI POLE</span></div><div><input class="admin-file-input" id="cover-upload" type="file" accept="image/jpeg,image/png,image/webp" data-cover-upload /><label class="admin-upload-button" for="cover-upload">LAE PILT ÜLES <b>+</b></label><p class="admin-upload-note">JPG, PNG või WEBP · kuni 10 MB</p><input type="hidden" name="image" /></div></div></section>
+
+              <section class="admin-block"><div class="admin-block-head"><p>GALERII</p><span>Lisa kuni 10 pilti projekti lehele.</span></div><input class="admin-file-input" id="gallery-upload" type="file" accept="image/jpeg,image/png,image/webp" multiple data-gallery-upload /><label class="admin-upload-button" for="gallery-upload">LISA GALERII PILTE <b>+</b></label><div class="admin-gallery" data-gallery-editor></div></section>
+
+              <section class="admin-block"><div class="admin-block-head"><p>CASE STUDY</p><span>Need tekstid ilmuvad projekti detaillehel.</span></div><div class="admin-form-grid"><label class="admin-field admin-field-wide">VÄLJAKUTSE<textarea name="challenge" rows="4" maxlength="1200" placeholder="Mis oli projekti lähtekoht?"></textarea></label><label class="admin-field admin-field-wide">LAHENDUS<textarea name="solution" rows="4" maxlength="1200" placeholder="Kuidas lahendasite selle?"></textarea></label><label class="admin-field admin-field-wide">TULEMUS<textarea name="result" rows="4" maxlength="1200" placeholder="Milline oli tulemus?"></textarea></label></div></section>
+
+              <section class="admin-block admin-options"><label><input type="checkbox" name="featured" /> NÄITA VALITUD SUUNANA</label><label class="admin-field">KAARDI SUURUS<select name="size"><option value="standard">Tavaline</option><option value="hero">Suur</option><option value="wide">Lai</option><option value="portrait">Püstine</option></select></label></section>
+
+              <footer class="admin-form-footer"><button class="admin-delete" type="button" data-delete-project>KUSTUTA PROJEKT</button><div><p class="admin-status" data-save-status aria-live="polite"></p><button class="admin-button" type="submit">SALVESTA MUUDATUSED <b>→</b></button></div></footer>
+            </form>
+          </section>
+        </div>
+      </section>
+    </main>
+    <script src="./data/projects.js"></script>
+    <script src="./src/admin.js?v=20260824-1"></script>
+  </body>
+</html>
