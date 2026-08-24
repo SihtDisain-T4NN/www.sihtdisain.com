@@ -5,6 +5,38 @@
   const escapeHtml = value => String(value).replace(/[&<>'"]/g, char => ({ '&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;' }[char]));
   const image = (source, alt) => `<img src="${escapeHtml(source)}" alt="${escapeHtml(alt)}" loading="lazy" decoding="async" width="1600" height="1000" />`;
 
+  function setMeta(attribute, name, content) {
+    let node = document.head.querySelector(`meta[${attribute}="${name}"]`);
+    if (!node) {
+      node = document.createElement('meta');
+      node.setAttribute(attribute, name);
+      document.head.append(node);
+    }
+    node.content = content;
+  }
+
+  function updateSeo(project) {
+    const title = project.seoTitle || `${project.title} — SIHT DISAIN`;
+    const description = project.seoDescription || project.description;
+    const canonicalUrl = `https://www.sihtdisain.ee/project.html?id=${encodeURIComponent(project.id)}`;
+    const imageUrl = new URL(project.image, location.href).href;
+    document.title = title;
+    setMeta('name', 'description', description);
+    setMeta('property', 'og:title', title);
+    setMeta('property', 'og:description', description);
+    setMeta('property', 'og:url', canonicalUrl);
+    setMeta('property', 'og:image', imageUrl);
+    setMeta('name', 'twitter:title', title);
+    setMeta('name', 'twitter:description', description);
+    setMeta('name', 'twitter:image', imageUrl);
+    let canonical = document.head.querySelector('link[rel="canonical"]');
+    if (!canonical) { canonical = document.createElement('link'); canonical.rel = 'canonical'; document.head.append(canonical); }
+    canonical.href = canonicalUrl;
+    let schema = document.head.querySelector('[data-project-schema]');
+    if (!schema) { schema = document.createElement('script'); schema.type = 'application/ld+json'; schema.dataset.projectSchema = 'true'; document.head.append(schema); }
+    schema.textContent = JSON.stringify({ '@context': 'https://schema.org', '@type': 'CreativeWork', name: project.title, description, image: imageUrl, url: canonicalUrl, creator: { '@type': 'Organization', name: 'SIHT DISAIN', url: 'https://www.sihtdisain.ee/' }, dateCreated: project.year });
+  }
+
   function attachFallbacks() {
     root.querySelectorAll('img').forEach(img => img.addEventListener('error', () => {
       if (img.dataset.fallback) return;
@@ -20,7 +52,7 @@
       root.innerHTML = '<section class="project-not-found"><h1>404</h1><p>Seda projekti ei leidnud.</p><a href="./portfolio.html">← Tagasi portfooliosse</a></section>';
       return;
     }
-    document.title = `${project.title} — SIHT DISAIN`;
+    updateSeo(project);
     const caseStudy = project.caseStudy || {};
     const caseItems = [
       ['01', 'VÄLJAKUTSE', caseStudy.challenge],
