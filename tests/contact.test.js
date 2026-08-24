@@ -86,7 +86,11 @@ test('POST /api/contact sends a validated PNG attachment', async () => {
     const resendRequest = outgoing.find(item => String(item.url).includes('api.resend.com'));
     const resendPayload = JSON.parse(resendRequest.options.body);
     assert.deepEqual(resendPayload.attachments, [{ filename: 'moodboard.png', content: 'iVBORw0KGgo=' }]);
-    assert.match(resendPayload.text, /Lisatud failid: moodboard\.png/);
+    assert.equal(resendPayload.subject, 'Päring: Logo & bränding — Mari Mets');
+    assert.match(resendPayload.text, /Manused: moodboard\.png/);
+    assert.match(resendPayload.html, /Kliendi andmed/);
+    assert.match(resendPayload.html, /Kliendi sõnum/);
+    assert.match(resendPayload.html, /mailto:mari@example\.com/);
   } finally {
     globalThis.fetch = originalFetch;
   }
