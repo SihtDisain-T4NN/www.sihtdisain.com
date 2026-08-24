@@ -221,20 +221,25 @@ async function verifyTurnstile(token, remoteip, env) {
 async function sendEmail(submission, env) {
   const attachments = await encodeAttachments(submission.files);
   const attachmentNames = attachments.map(attachment => attachment.filename);
+  const subject = `Päring: ${submission.service} — ${submission.name}`;
   const text = [
-    'SIHT DISAIN — UUS KONTAKTIPÄRING',
+    'UUS KONTAKTIPÄRING',
     '',
+    'KLIENDI ANDMED',
     `Nimi: ${submission.name}`,
-    `E-mail: ${submission.email}`,
-    `Ettevõte: ${submission.company || '—'}`,
-    `Soovitud teenus: ${submission.service}`,
-    `Eelarvevahemik: ${submission.budget || '—'}`,
-    `Soovitud ajaraam: ${submission.timeline || '—'}`,
-    `Lisatud failid: ${attachmentNames.length ? attachmentNames.join(', ') : '—'}`,
+    `E-post: ${submission.email}`,
+    `Ettevõte: ${submission.company || 'Pole lisatud'}`,
     '',
-    'Sõnum:',
+    'PROJEKT',
+    `Teenuse soov: ${submission.service}`,
+    `Eelarve: ${submission.budget || 'Pole valitud'}`,
+    `Ajaraam: ${submission.timeline || 'Pole valitud'}`,
+    `Manused: ${attachmentNames.length ? attachmentNames.join(', ') : 'Pole lisatud'}`,
+    '',
+    'KLIENDI SÕNUM',
     submission.message
   ].join('\n');
+  const html = createEmailHtml(submission, attachmentNames);
 
   return fetch('https://api.resend.com/emails', {
     method: 'POST',
@@ -247,11 +252,83 @@ async function sendEmail(submission, env) {
       from: env.EMAIL_FROM,
       to: [env.CONTACT_EMAIL],
       reply_to: submission.email,
-      subject: 'Uus päring — Siht Disain',
+      subject,
       text,
+      html,
       ...(attachments.length ? { attachments } : {})
     })
   });
+}
+
+function createEmailHtml(submission, attachmentNames) {
+  const value = text => escapeHtml(text || 'Pole lisatud');
+  const attachmentList = attachmentNames.length
+    ? attachmentNames.map(name => `<li style="margin:0 0 6px">${escapeHtml(name)}</li>`).join('')
+    : '<li style="margin:0">Pole lisatud</li>';
+
+  return `<!doctype html>
+<html lang="et">
+  <body style="margin:0;background:#f4f4f2;color:#141414;font-family:Arial,Helvetica,sans-serif">
+    <main style="max-width:680px;margin:0 auto;padding:32px 16px">
+      <section style="overflow:hidden;background:#ffffff;border:1px solid #deded9;border-radius:18px">
+        <header style="padding:28px 30px 24px;background:#101010;color:#ffffff">
+          <p style="margin:0 0 10px;font-size:11px;font-weight:700;letter-spacing:.13em">SIHT DISAIN</p>
+          <h1 style="margin:0;font-size:28px;line-height:1.1">Uus kontaktipäring</h1>
+        </header>
+        <div style="padding:30px">
+          <p style="margin:0 0 24px;padding:14px 16px;border-left:3px solid #ff5b00;background:#fff5ef;font-size:15px;line-height:1.5">
+            <strong>${value(submission.name)}</strong> soovib teenust: <strong>${value(submission.service)}</strong>
+          </p>
+          ${emailSection('Kliendi andmed', [
+            ['Nimi', submission.name],
+            ['E-post', `<a href="mailto:${escapeAttribute(submission.email)}" style="color:#141414">${value(submission.email)}</a>`],
+            ['Ettevõte', value(submission.company)]
+          ])}
+          ${emailSection('Projekt', [
+            ['Teenuse soov', value(submission.service)],
+            ['Eelarve', value(submission.budget)],
+            ['Ajaraam', value(submission.timeline)]
+          ])}
+          <section style="margin:30px 0 0">
+            <p style="margin:0 0 10px;font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#696965">Kliendi sõnum</p>
+            <div style="padding:18px 20px;background:#f4f4f2;border-radius:10px;font-size:16px;line-height:1.65;white-space:pre-wrap">${value(submission.message)}</div>
+          </section>
+          <section style="margin:30px 0 0">
+            <p style="margin:0 0 10px;font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#696965">Lisatud failid</p>
+            <ul style="margin:0;padding:14px 20px 10px 34px;background:#f4f4f2;border-radius:10px;font-size:14px;line-height:1.4">${attachmentList}</ul>
+          </section>
+        </div>
+      </section>
+      <p style="margin:16px 4px 0;color:#777773;font-size:12px;line-height:1.5">Vastamiseks vajuta Gmailis „Vasta” — vastus läheb otse kliendi e-posti aadressile.</p>
+    </main>
+  </body>
+</html>`;
+}
+
+function emailSection(title, rows) {
+  const content = rows.map(([label, value]) => `
+    <tr>
+      <td style="padding:10px 16px 10px 0;width:36%;color:#696965;font-size:13px;vertical-align:top">${label}</td>
+      <td style="padding:10px 0;font-size:15px;vertical-align:top">${value}</td>
+    </tr>`).join('');
+  return `<section style="margin:30px 0 0">
+    <p style="margin:0 0 8px;font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#696965">${title}</p>
+    <table role="presentation" style="width:100%;border-collapse:collapse;border-top:1px solid #deded9">${content}</table>
+  </section>`;
+}
+
+function escapeHtml(value) {
+  return String(value).replace(/[&<>'"]/g, character => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    "'": '&#39;',
+    '"': '&quot;'
+  })[character]);
+}
+
+function escapeAttribute(value) {
+  return escapeHtml(value).replace(/`/g, '&#96;');
 }
 
 async function encodeAttachments(files) {
