@@ -80,16 +80,51 @@ ibanCopyButton?.addEventListener('click', async () => {
     ibanCopyButton.innerHTML = 'VALI JA KOPEERI';
   }
 });
+
+const attachmentInput = contactForm?.querySelector('input[name="attachments"]');
+const attachmentStatus = contactForm?.querySelector('.file-upload-status');
+const MAX_ATTACHMENTS = 3;
+const MAX_ATTACHMENT_BYTES = 3 * 1024 * 1024;
+const MAX_TOTAL_ATTACHMENT_BYTES = 5 * 1024 * 1024;
+const ALLOWED_ATTACHMENT_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'application/pdf']);
+
+function updateAttachmentStatus(message, isError = false) {
+  if (!attachmentStatus) return;
+  attachmentStatus.textContent = message;
+  attachmentStatus.classList.toggle('is-error', isError);
+}
+
+function validateAttachments() {
+  const files = attachmentInput ? [...attachmentInput.files] : [];
+  if (!files.length) {
+    updateAttachmentStatus('Faili pole lisatud');
+    return true;
+  }
+
+  const totalBytes = files.reduce((total, file) => total + file.size, 0);
+  if (files.length > MAX_ATTACHMENTS || totalBytes > MAX_TOTAL_ATTACHMENT_BYTES || files.some(file => file.size > MAX_ATTACHMENT_BYTES || !ALLOWED_ATTACHMENT_TYPES.has(file.type))) {
+    updateAttachmentStatus('Vali kuni 3 JPG-, PNG-, WEBP- või PDF-faili: üks fail kuni 3 MB, kokku kuni 5 MB.', true);
+    return false;
+  }
+
+  updateAttachmentStatus(`${files.length === 1 ? files[0].name : `${files.length} faili`} valitud · ${(totalBytes / 1024 / 1024).toFixed(1)} MB`);
+  return true;
+}
+
+attachmentInput?.addEventListener('change', validateAttachments);
+
 contactForm?.addEventListener('submit', async event => {
   event.preventDefault();
   if (!contactForm.checkValidity()) { contactForm.reportValidity(); return; }
+  if (!validateAttachments()) return;
 
   const button = contactForm.querySelector('button[type="submit"]');
   const inputs = [...contactForm.querySelectorAll('input, select, textarea')];
   const success = contactForm.querySelector('.form-success');
   const error = contactForm.querySelector('.form-error');
   const originalButton = button.innerHTML;
-  const values = Object.fromEntries(new FormData(contactForm));
+  const payload = new FormData(contactForm);
+  payload.set('turnstileToken', String(payload.get('cf-turnstile-response') || ''));
 
   success.classList.remove('show');
   error.classList.remove('show');
@@ -100,23 +135,17 @@ contactForm?.addEventListener('submit', async event => {
   try {
     const response = await fetch('/api/contact', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-      body: JSON.stringify({
-        name: values.name,
-        email: values.email,
-        company: values.company,
-        service: values.service,
-        budget: values.budget,
-        timeline: values.timeline,
-        message: values.message,
-        website: values.website,
-        turnstileToken: values['cf-turnstile-response']
-      })
+      headers: { 'Accept': 'application/json' },
+      body: payload
     });
     const result = await response.json().catch(() => ({}));
-    if (!response.ok || !result.success) throw new Error(result.error || 'Contact request failed');
+    if (!response.ok || !result.success) {
+      if (result.error === 'Attachment not accepted') updateAttachmentStatus('Seda faili ei saa lisada. Kasuta JPG-, PNG-, WEBP- või PDF-faili, kokku kuni 5 MB.', true);
+      throw new Error(result.error || 'Contact request failed');
+    }
 
     contactForm.reset();
+    validateAttachments();
     success.classList.add('show');
     window.turnstile?.reset();
   } catch (requestError) {
