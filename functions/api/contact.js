@@ -280,7 +280,7 @@ function createEmailHtml(submission, attachmentNames) {
             <strong>${value(submission.name)}</strong> soovib teenust: <strong>${value(submission.service)}</strong>
           </p>
           ${emailSection('Kliendi andmed', [
-            ['Nimi', submission.name],
+            ['Nimi', value(submission.name)],
             ['E-post', `<a href="mailto:${escapeAttribute(submission.email)}" style="color:#141414">${value(submission.email)}</a>`],
             ['Ettevõte', value(submission.company)]
           ])}
