@@ -6,6 +6,11 @@
     <meta name="theme-color" content="#050505" />
     <meta name="description" content="Siht Disaini valitud brändingu, veebi, pakendi ja digitaalsete kogemuste portfolio." />
     <title>Portfoolio — SIHT DISAIN</title>
+    <meta property="og:title" content="Portfoolio — SIHT DISAIN" />
+    <meta property="og:description" content="Valitud brändingu, veebi, pakendi ja digitaalsete kogemuste projektid." />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://www.sihtdisain.ee/portfolio.html" />
+    <link rel="canonical" href="https://www.sihtdisain.ee/portfolio.html" />
     <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -13,13 +18,14 @@
     <link rel="stylesheet" href="./src/style.css" />
     <link rel="stylesheet" href="./src/portfolio.css" />
     <link rel="stylesheet" href="./src/portfolio-overrides.css" />
+    <link rel="stylesheet" href="./src/studio-tools.css?v=20260824-1" />
   </head>
   <body class="portfolio-page">
     <div class="portfolio-loader" aria-hidden="true"><b>SIHT</b><span>WORK / <i>00</i></span></div>
     <div class="portfolio-transition" aria-hidden="true"></div>
     <div class="portfolio-cursor" aria-hidden="true"><span></span><b>VIEW ↗</b></div>
     <div class="portfolio-progress" aria-hidden="true"><i></i></div>
-    <nav class="nav portfolio-nav"><a class="logo" href="./index.html">SIHT<span>®</span></a><div class="nav-links"><a href="./index.html">Avaleht</a><a class="is-current" href="./portfolio.html">Portfoolio</a><a href="./index.html#services">Teenused</a><a href="./index.html#contact">Kontakt</a></div><a class="menu-dot" href="./index.html#contact"><i></i> Võta ühendust</a><button class="mobile-menu-toggle" type="button" data-mobile-menu-toggle aria-controls="mobile-menu" aria-expanded="false"><span>MENÜÜ</span><i></i></button></nav>
+    <nav class="nav portfolio-nav"><a class="logo" href="./index.html">SIHT<span>®</span></a><div class="nav-links"><a href="./index.html" data-et="Avaleht" data-en="Home">Avaleht</a><a class="is-current" href="./portfolio.html" data-et="Portfoolio" data-en="Portfolio">Portfoolio</a><a href="./index.html#services" data-et="Teenused" data-en="Services">Teenused</a><a href="./index.html#contact" data-et="Kontakt" data-en="Contact">Kontakt</a></div><div class="language-switch" aria-label="Keelevalik"><button type="button" data-language-toggle="et" aria-pressed="true">EST</button><button type="button" data-language-toggle="en" aria-pressed="false">ENG</button></div><a class="menu-dot" href="./index.html#contact"><i></i> Võta ühendust</a><button class="mobile-menu-toggle" type="button" data-mobile-menu-toggle aria-controls="mobile-menu" aria-expanded="false"><span>MENÜÜ</span><i></i></button></nav>
     <aside class="mobile-menu" id="mobile-menu" data-mobile-menu aria-hidden="true"><div class="mobile-menu-top"><a class="logo" href="./index.html">SIHT<span>®</span></a><button class="mobile-menu-close" type="button" data-mobile-menu-close aria-label="Sulge menüü">SULGE <i>×</i></button></div><nav class="mobile-menu-links" aria-label="Mobiilimenüü"><a href="./index.html"><span>01</span> AVALEHT</a><a href="./portfolio.html"><span>02</span> PORTFOOLIO</a><a href="./index.html#services"><span>03</span> TEENUSED</a><a href="./index.html#contact"><span>04</span> KONTAKT</a></nav><div class="mobile-menu-bottom"><p>ON SUL IDEE?<br/><i>TEEME SELLE ÄRA.</i></p><a href="mailto:info@sihtdisain.ee">info@sihtdisain.ee ↗</a></div></aside>
     <main>
       <section class="portfolio-hero">
@@ -45,5 +51,6 @@
     <script src="./data/projects.js"></script>
     <script src="./src/portfolio.js"></script>
     <script src="./src/mobile-menu.js"></script>
+    <script src="./src/studio-tools.js?v=20260824-1"></script>
   </body>
 </html>
