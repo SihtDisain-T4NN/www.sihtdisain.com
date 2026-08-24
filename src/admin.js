@@ -116,6 +116,8 @@
     form.elements.category.value = project.category;
     form.elements.year.value = project.year;
     form.elements.description.value = project.description;
+    form.elements.seoTitle.value = project.seoTitle || '';
+    form.elements.seoDescription.value = project.seoDescription || '';
     form.elements.tags.value = project.tags.join(', ');
     form.elements.featured.checked = Boolean(project.featured);
     form.elements.size.value = project.size || 'standard';
@@ -174,6 +176,8 @@
       category: form.elements.category.value,
       year: form.elements.year.value.trim(),
       description: form.elements.description.value.trim(),
+      seoTitle: form.elements.seoTitle.value.trim(),
+      seoDescription: form.elements.seoDescription.value.trim(),
       image: form.elements.image.value.trim(),
       featured: form.elements.featured.checked,
       size: form.elements.size.value,
