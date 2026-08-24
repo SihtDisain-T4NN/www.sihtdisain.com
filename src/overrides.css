@@ -49,6 +49,7 @@
   .section-head .eyebrow{display:block;margin:0 0 8vw}
   .section-head h2{max-width:100%;font-size:15vw!important;line-height:.94!important;text-align:left!important;letter-spacing:-.08em!important;margin:0!important;padding:0!important}
   .hero-slogan{font-size:19vw!important;line-height:.92!important;margin:0!important;padding:0!important}
+  .hero-meta{top:108px!important;left:20px!important;z-index:2}
   .hero h1 span,.section-head h2,.manifesto h2,.strip-intro h2,.statement h2,.direction-finder-intro h2,.testimonial h2,.faq h2,.contact h2,.process-steps h2{opacity:1!important;transform:none!important;filter:none!important;transition:none!important;will-change:auto}
   .manifesto h2{margin-top:13vw!important;line-height:.98!important;padding:0!important}
   .strip-intro h2,.direction-finder-intro h2,.testimonial h2,.faq h2{margin:7vw 0 0!important;padding:0!important;line-height:.98!important;letter-spacing:-.08em!important}
