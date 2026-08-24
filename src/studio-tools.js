@@ -3,37 +3,6 @@
   const $ = (selector, root = document) => root.querySelector(selector);
   const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
 
-  // EST / ENG — the persistent control covers navigation and the interactive studio tools.
-  const languageKey = 'siht-disain-language';
-  const initialLanguage = new URLSearchParams(location.search).get('lang') === 'en' ? 'en' : (localStorage.getItem(languageKey) === 'en' ? 'en' : 'et');
-  function applyLanguage(language, updateUrl = false) {
-    document.documentElement.lang = language;
-    document.documentElement.dataset.language = language;
-    $$('[data-et][data-en]').forEach(element => { element.innerHTML = element.dataset[language]; });
-    $$('[data-placeholder-et][data-placeholder-en]').forEach(element => { element.placeholder = element.dataset[`placeholder${language === 'en' ? 'En' : 'Et'}`]; });
-    $$('[data-aria-label-et][data-aria-label-en]').forEach(element => { element.setAttribute('aria-label', element.dataset[`ariaLabel${language === 'en' ? 'En' : 'Et'}`]); });
-    $$('[data-language-toggle]').forEach(control => {
-      const active = control.dataset.languageToggle === language;
-      control.classList.toggle('is-active', active);
-      control.setAttribute('aria-pressed', String(active));
-      control.setAttribute('aria-current', active ? 'true' : 'false');
-    });
-    const form = $('[data-newsletter-form]');
-    if (form) form.dataset.language = language;
-    localStorage.setItem(languageKey, language);
-    if (updateUrl) {
-      const url = new URL(location.href);
-      url.searchParams.set('lang', language);
-      history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`);
-    }
-    window.dispatchEvent(new CustomEvent('siht-language-change', { detail: language }));
-  }
-  applyLanguage(initialLanguage);
-  $$('[data-language-toggle]').forEach(control => control.addEventListener('click', event => {
-    event.preventDefault();
-    applyLanguage(control.dataset.languageToggle === 'en' ? 'en' : 'et', true);
-  }));
-
   // Offer calculator: useful indicative price, then carries choices straight to the real contact form.
   const calculator = $('[data-calculator]');
   const calculatorResult = $('[data-calculator-result]');
