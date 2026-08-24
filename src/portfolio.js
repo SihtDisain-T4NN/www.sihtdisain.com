@@ -12,15 +12,21 @@
   let activeFilter = 'all';
   let query = '';
 
+  function isEnglish() { return document.documentElement.lang === 'en'; }
+  function categoryLabel(project) {
+    if (!isEnglish()) return project.categoryLabel;
+    return ({ branding: 'Branding', logo: 'Logo', packaging: 'Packaging', web: 'Web', uiux: 'UI / UX', campaign: 'Campaign', graphic: 'Graphic design' })[project.category] || project.categoryLabel;
+  }
+
   function projectLink(project) { return `./project.html?id=${encodeURIComponent(project.id)}`; }
   function imageTag(project, loading = 'lazy') {
     return `<img src="${project.image}" alt="${escapeHtml(project.title)} — ${escapeHtml(project.categoryLabel)}" loading="${loading}" decoding="async" width="1600" height="1000" />`;
   }
   function cardMarkup(project, index) {
-    return `<a class="portfolio-card" data-project-id="${project.id}" data-category="${project.category}" data-size="${project.size}" href="${projectLink(project)}" aria-label="Ava projekt ${escapeHtml(project.title)}"><figure class="portfolio-card-media">${imageTag(project, index < 2 ? 'eager' : 'lazy')}</figure><div class="portfolio-card-meta"><span class="portfolio-card-index">${String(index + 1).padStart(2, '0')}</span><h3>${escapeHtml(project.title)}</h3><span class="portfolio-card-year">${escapeHtml(project.year)} <i class="portfolio-card-arrow">↗</i></span></div><p class="portfolio-card-description">${escapeHtml(project.description)}</p></a>`;
+    return `<a class="portfolio-card" data-project-id="${project.id}" data-category="${project.category}" data-size="${project.size}" href="${projectLink(project)}" aria-label="${isEnglish() ? 'Open project' : 'Ava projekt'} ${escapeHtml(project.title)}"><figure class="portfolio-card-media">${imageTag(project, index < 2 ? 'eager' : 'lazy')}</figure><div class="portfolio-card-meta"><span class="portfolio-card-index">${String(index + 1).padStart(2, '0')}</span><h3>${escapeHtml(project.title)}</h3><span class="portfolio-card-year">${escapeHtml(project.year)} <i class="portfolio-card-arrow">↗</i></span></div><p class="portfolio-card-description">${escapeHtml(project.description)}</p></a>`;
   }
   function featuredMarkup(project) {
-    return `<a class="portfolio-featured-card" href="${projectLink(project)}" data-project-id="${project.id}" aria-label="Ava projekt ${escapeHtml(project.title)}">${imageTag(project, 'eager')}<div class="portfolio-featured-copy"><div><h3>${escapeHtml(project.title)}</h3><p>${escapeHtml(project.categoryLabel)} / ${escapeHtml(project.year)}</p></div><b>↗</b></div></a>`;
+    return `<a class="portfolio-featured-card" href="${projectLink(project)}" data-project-id="${project.id}" aria-label="${isEnglish() ? 'Open project' : 'Ava projekt'} ${escapeHtml(project.title)}">${imageTag(project, 'eager')}<div class="portfolio-featured-copy"><div><h3>${escapeHtml(project.title)}</h3><p>${escapeHtml(categoryLabel(project))} / ${escapeHtml(project.year)}</p></div><b>↗</b></div></a>`;
   }
   function escapeHtml(value) {
     return String(value).replace(/[&<>'"]/g, char => ({ '&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;' }[char]));
@@ -37,7 +43,7 @@
     const featured = projects.filter(project => project.featured).slice(0, 4);
     if (heroTotal) heroTotal.textContent = `01—${String(projects.length).padStart(2, '0')}`;
     featuredTrack.innerHTML = featured.map(featuredMarkup).join('');
-    grid.innerHTML = projects.map(cardMarkup).join('') || '<p class="portfolio-empty">Projektid lisanduvad peagi.</p>';
+    grid.innerHTML = projects.map(cardMarkup).join('') || `<p class="portfolio-empty">${isEnglish() ? 'Projects are coming soon.' : 'Projektid lisanduvad peagi.'}</p>`;
     setFallbacks(document);
     revealCards();
     applyFilters(false);
@@ -59,9 +65,9 @@
         card.classList.remove('is-filtered', 'is-revealed');
         if (show) { visible += 1; card.style.animationDelay = `${index * 70}ms`; card.classList.add('is-revealed'); }
       });
-      count.textContent = `${visible} ${visible === 1 ? 'PROJEKT' : 'PROJEKTI'}`;
+      count.textContent = `${visible} ${isEnglish() ? (visible === 1 ? 'PROJECT' : 'PROJECTS') : (visible === 1 ? 'PROJEKT' : 'PROJEKTI')}`;
       const empty = grid.querySelector('.portfolio-empty');
-      if (!visible && !empty) grid.insertAdjacentHTML('beforeend', '<p class="portfolio-empty">Selle otsinguga projekte ei leidnud.</p>');
+      if (!visible && !empty) grid.insertAdjacentHTML('beforeend', `<p class="portfolio-empty">${isEnglish() ? 'No projects found for this search.' : 'Selle otsinguga projekte ei leidnud.'}</p>`);
       if (visible) grid.querySelector('.portfolio-empty')?.remove();
     }, animated && !reducedMotion ? 210 : 0);
   }
@@ -134,9 +140,10 @@
     }
   }
 
-  if (!projects.length) { grid.innerHTML = '<p class="portfolio-empty">Portfolio andmeid ei leitud.</p>'; return; }
+  if (!projects.length) { grid.innerHTML = `<p class="portfolio-empty">${isEnglish() ? 'Portfolio data was not found.' : 'Portfolio andmeid ei leitud.'}</p>`; return; }
   render(); setupLoader(); setupCursor(); setupRailAndParallax(); setupTransitions();
   filters.forEach(button => button.addEventListener('click', () => { activeFilter = button.dataset.filter; filters.forEach(item => item.classList.toggle('is-active', item === button)); applyFilters(); }));
   search?.addEventListener('input', () => { query = search.value.trim().toLowerCase(); applyFilters(); });
+  window.addEventListener('siht-language-change', () => render());
   void loadManagedProjects();
 })();
