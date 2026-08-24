@@ -54,6 +54,29 @@ Resendi tasuta plaan lubab praegu 100 transactional e-kirja päevas ja 3 000 kuu
 
 Turnstile tokenit kontrollib endpoint serveris Cloudflare Siteverify API abil. Vormi klient ei saa ega tohi secret key’d kasutada.
 
+## Omaniku portfolio haldusala
+
+Omaniku haldusala asub aadressil `/admin.html`. See ei ole avalikus menüüs ega indekseerita otsingumootorites.
+
+Sisselogimine käib ühekordse kuuekohalise koodiga. Kood saadetakse olemasolevale `CONTACT_EMAIL` aadressile, seega eraldi parooli ega uut kasutajakontot vaja ei ole. Kood kehtib 10 minutit ja sisselogimine 8 tundi. Sessionid hoitakse olemasolevas `CONTACT_RATE_LIMIT` KV namespace’is; soovi korral võib lisada eraldi `PORTFOLIO_DATA` KV bindingu.
+
+Haldusalas saab:
+
+- muuta kõigi portfolio projektide tekste, kategooriaid, aastaid ja case study sisu;
+- lisada või eemaldada galerii pilte;
+- luua uusi projekte — igaüks avaneb automaatselt aadressil `project.html?id=...`;
+- valida, millised tööd lähevad "Valitud suunad" ribale.
+
+### Piltide üleslaadimine
+
+Piltide otse haldusalast üleslaadimiseks lisa Cloudflare Pages projekti R2 binding:
+
+| Binding | R2 bucket |
+| --- | --- |
+| `PORTFOLIO_MEDIA` | enda loodud R2 bucket, näiteks `sihtdisain-portfolio-media` |
+
+Pärast bindingu lisamist saab haldusalast üles laadida JPG, PNG ja WEBP pilte kuni 10 MB. Pilte serveeritakse samalt domeenilt aadressil `/api/media/...`. Ilma R2 bindinguta töötavad tekstide ning projektide muutmine, kuid uute piltide üleslaadimine kuvab seadistuse teate.
+
 ## 4. Cloudflare Pages deployment
 
 1. Cloudflare dashboardis ava **Workers & Pages** → **Create application** → **Pages** → **Connect to Git**.
