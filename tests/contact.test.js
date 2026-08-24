@@ -35,6 +35,17 @@ function requestWith(body) {
   });
 }
 
+function multipartRequest(body, files = []) {
+  const form = new FormData();
+  Object.entries(body).forEach(([key, value]) => form.append(key, value));
+  files.forEach(({ blob, name }) => form.append('attachments', blob, name));
+  return new Request('https://sihtdisain.com/api/contact', {
+    method: 'POST',
+    headers: { 'CF-Connecting-IP': '203.0.113.20' },
+    body: form
+  });
+}
+
 test('GET /api/contact rejects unsupported methods', async () => {
   const response = onRequestGet();
   assert.equal(response.status, 405);
@@ -56,6 +67,36 @@ test('POST /api/contact rejects malformed JSON and an overlong message', async (
 
   const tooLong = await onRequestPost({ request: requestWith({ ...validPayload, message: 'x'.repeat(5001) }), env: environment() });
   assert.equal(tooLong.status, 400);
+});
+
+test('POST /api/contact sends a validated PNG attachment', async () => {
+  const originalFetch = globalThis.fetch;
+  const outgoing = [];
+  globalThis.fetch = async (url, options) => {
+    outgoing.push({ url, options });
+    if (String(url).includes('siteverify')) return Response.json({ success: true, hostname: 'sihtdisain.com', action: 'contact-form' });
+    return Response.json({ id: 'email-id' }, { status: 200 });
+  };
+
+  try {
+    const png = new Blob([new Uint8Array([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A])], { type: 'image/png' });
+    const response = await onRequestPost({ request: multipartRequest(validPayload, [{ blob: png, name: 'moodboard.png' }]), env: environment() });
+    assert.equal(response.status, 200);
+
+    const resendRequest = outgoing.find(item => String(item.url).includes('api.resend.com'));
+    const resendPayload = JSON.parse(resendRequest.options.body);
+    assert.deepEqual(resendPayload.attachments, [{ filename: 'moodboard.png', content: 'iVBORw0KGgo=' }]);
+    assert.match(resendPayload.text, /Lisatud failid: moodboard\.png/);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test('POST /api/contact rejects unsupported file uploads', async () => {
+  const textFile = new Blob(['not an image'], { type: 'text/plain' });
+  const response = await onRequestPost({ request: multipartRequest(validPayload, [{ blob: textFile, name: 'notes.txt' }]), env: environment() });
+  assert.equal(response.status, 400);
+  assert.deepEqual(await response.json(), { success: false, error: 'Attachment not accepted' });
 });
 
 test('POST /api/contact sends validated submissions and applies rate limiting', async () => {
