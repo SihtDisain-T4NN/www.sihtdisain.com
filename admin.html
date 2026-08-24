@@ -37,7 +37,7 @@
       <section class="admin-app" data-admin-app hidden>
         <header class="admin-app-head">
           <div><p class="admin-kicker">OMANIKU VAADE</p><h1>PORTFOLIO<br/><i>HALDUS.</i></h1></div>
-          <div class="admin-actions"><a class="admin-outline" href="./portfolio.html" target="_blank" rel="noopener">AVA LIVE LEHT ↗</a><button class="admin-outline" type="button" data-logout>LOGI VÄLJA</button></div>
+          <div class="admin-actions"><a class="admin-outline" href="./portfolio.html" target="_blank" rel="noopener">AVA LIVE LEHT ↗</a><a class="admin-outline" href="/api/admin/newsletter.csv">UUDISKIRI CSV ↓</a><button class="admin-outline" type="button" data-logout>LOGI VÄLJA</button></div>
         </header>
 
         <div class="admin-layout">
@@ -58,6 +58,8 @@
                 <label class="admin-field admin-field-wide">LÜHIKIRJELDUS<textarea name="description" rows="3" maxlength="520" required placeholder="Üks lühike kirjeldus, mis läheb portfolio kaardile."></textarea></label>
                 <label class="admin-field admin-field-wide">TEENUSED / MÄRKSÕNAD<input name="tags" maxlength="320" required placeholder="Bränding, Strateegia, Identiteet" /><small>Eralda komaga.</small></label>
               </div>
+
+              <section class="admin-block"><div class="admin-block-head"><p>GOOGLE JA JAGAMINE</p><span>Need väljad määravad projekti Google’i tulemuse ning jagamisel kuvatava teksti.</span></div><div class="admin-form-grid"><label class="admin-field admin-field-wide">GOOGLE’I PEALKIRI <small>(VALIKULINE)</small><input name="seoTitle" maxlength="70" placeholder="Näiteks NOVA identiteet — SIHT DISAIN" /><small>Kuni 70 tähemärki. Tühjaks jättes kasutatakse projekti nime.</small></label><label class="admin-field admin-field-wide">GOOGLE’I KIRJELDUS <small>(VALIKULINE)</small><textarea name="seoDescription" rows="3" maxlength="160" placeholder="Lühike kirjeldus, mida Google ja sotsiaalmeedia jagamine näitavad."></textarea><small>Kuni 160 tähemärki. Tühjaks jättes kasutatakse projekti kirjeldust.</small></label></div></section>
 
               <section class="admin-block"><div class="admin-block-head"><p>KAANEPILT</p><span>See pilt läheb portfolio kaardile.</span></div><div class="admin-image-control"><div class="admin-image-preview" data-cover-preview><span>PILTI POLE</span></div><div><input class="admin-file-input" id="cover-upload" type="file" accept="image/jpeg,image/png,image/webp" data-cover-upload /><label class="admin-upload-button" for="cover-upload">LAE PILT ÜLES <b>+</b></label><p class="admin-upload-note">JPG, PNG või WEBP · kuni 10 MB</p><input type="hidden" name="image" /></div></div></section>
 
