@@ -1,5 +1,5 @@
 (() => {
-  const projects = Array.isArray(window.SIHT_PROJECTS) ? window.SIHT_PROJECTS : [];
+  let projects = Array.isArray(window.SIHT_PROJECTS) ? window.SIHT_PROJECTS : [];
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const loader = document.querySelector('.portfolio-loader');
   const loaderCount = loader?.querySelector('i');
@@ -8,6 +8,7 @@
   const count = document.querySelector('.portfolio-result-count');
   const search = document.querySelector('.portfolio-search input');
   const filters = [...document.querySelectorAll('[data-filter]')];
+  const heroTotal = document.querySelector('[data-portfolio-total]');
   let activeFilter = 'all';
   let query = '';
 
@@ -34,6 +35,7 @@
   }
   function render() {
     const featured = projects.filter(project => project.featured).slice(0, 4);
+    if (heroTotal) heroTotal.textContent = `01—${String(projects.length).padStart(2, '0')}`;
     featuredTrack.innerHTML = featured.map(featuredMarkup).join('');
     grid.innerHTML = projects.map(cardMarkup).join('') || '<p class="portfolio-empty">Projektid lisanduvad peagi.</p>';
     setFallbacks(document);
@@ -119,8 +121,22 @@
     });
   }
 
+  async function loadManagedProjects() {
+    try {
+      const response = await fetch('/api/portfolio', { headers: { Accept: 'application/json' } });
+      if (!response.ok) return;
+      const data = await response.json();
+      if (!data.managed || !Array.isArray(data.projects)) return;
+      projects = data.projects;
+      render();
+    } catch {
+      // The static portfolio remains available if the optional admin storage is unavailable.
+    }
+  }
+
   if (!projects.length) { grid.innerHTML = '<p class="portfolio-empty">Portfolio andmeid ei leitud.</p>'; return; }
   render(); setupLoader(); setupCursor(); setupRailAndParallax(); setupTransitions();
   filters.forEach(button => button.addEventListener('click', () => { activeFilter = button.dataset.filter; filters.forEach(item => item.classList.toggle('is-active', item === button)); applyFilters(); }));
   search?.addEventListener('input', () => { query = search.value.trim().toLowerCase(); applyFilters(); });
+  void loadManagedProjects();
 })();
