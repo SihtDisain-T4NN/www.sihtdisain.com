@@ -20,8 +20,18 @@ const ALLOWED_TIMELINES = new Set([
   'Järgmise 3–6 kuu jooksul',
   'Uurin võimalusi'
 ]);
+const ALLOWED_ATTACHMENT_TYPES = new Set([
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'application/pdf'
+]);
 
 const MAX_REQUESTS_PER_HOUR = 3;
+const MAX_ATTACHMENTS = 3;
+const MAX_ATTACHMENT_BYTES = 3 * 1024 * 1024;
+const MAX_TOTAL_ATTACHMENT_BYTES = 5 * 1024 * 1024;
+const MAX_MULTIPART_BYTES = MAX_TOTAL_ATTACHMENT_BYTES + 512 * 1024;
 const JSON_HEADERS = {
   'Content-Type': 'application/json; charset=UTF-8',
   'Cache-Control': 'no-store'
@@ -32,20 +42,10 @@ export function onRequestGet() {
 }
 
 export async function onRequestPost({ request, env }) {
-  if (!request.headers.get('content-type')?.includes('application/json')) {
-    return json({ success: false, error: 'Invalid request' }, 415);
-  }
+  const parsed = await readSubmission(request);
+  if (parsed.error) return json({ success: false, error: parsed.error }, parsed.status);
 
-  let body;
-  try {
-    body = await request.json();
-  } catch {
-    return json({ success: false, error: 'Invalid request' }, 400);
-  }
-
-  if (!body || typeof body !== 'object' || Array.isArray(body)) {
-    return json({ success: false, error: 'Invalid request' }, 400);
-  }
+  const { body, files } = parsed;
 
   // Bots commonly fill hidden fields. Respond successfully without sending mail.
   if (clean(body.website, 200)) return json({ success: true }, 200);
@@ -58,7 +58,8 @@ export async function onRequestPost({ request, env }) {
     budget: clean(body.budget, 80),
     timeline: clean(body.timeline, 100),
     message: clean(body.message, 5000),
-    turnstileToken: clean(body.turnstileToken, 2048)
+    turnstileToken: clean(body.turnstileToken, 2048),
+    files
   };
 
   if (!isValidSubmission(submission)) {
@@ -80,13 +81,88 @@ export async function onRequestPost({ request, env }) {
     return json({ success: false, error: 'Verification failed' }, 403);
   }
 
-  const emailResponse = await sendEmail(submission, env);
+  let emailResponse;
+  try {
+    emailResponse = await sendEmail(submission, env);
+  } catch (error) {
+    console.warn('Contact form attachment validation failed:', error);
+    return json({ success: false, error: 'Attachment not accepted' }, 400);
+  }
+
   if (!emailResponse.ok) {
     console.error('Resend email delivery failed:', emailResponse.status, await emailResponse.text());
     return json({ success: false, error: 'Service unavailable' }, 502);
   }
 
   return json({ success: true });
+}
+
+async function readSubmission(request) {
+  const contentType = request.headers.get('content-type') || '';
+
+  if (contentType.includes('application/json')) {
+    try {
+      const body = await request.json();
+      if (!body || typeof body !== 'object' || Array.isArray(body)) return { error: 'Invalid request', status: 400 };
+      return { body, files: [] };
+    } catch {
+      return { error: 'Invalid request', status: 400 };
+    }
+  }
+
+  if (!contentType.includes('multipart/form-data')) return { error: 'Invalid request', status: 415 };
+
+  const contentLength = Number(request.headers.get('content-length') || 0);
+  if (Number.isFinite(contentLength) && contentLength > MAX_MULTIPART_BYTES) {
+    return { error: 'Attachment not accepted', status: 413 };
+  }
+
+  let form;
+  try {
+    form = await request.formData();
+  } catch {
+    return { error: 'Invalid request', status: 400 };
+  }
+
+  const files = validateAttachmentMetadata(form.getAll('attachments'));
+  if (!files) return { error: 'Attachment not accepted', status: 400 };
+
+  return {
+    body: {
+      name: form.get('name'),
+      email: form.get('email'),
+      company: form.get('company'),
+      service: form.get('service'),
+      budget: form.get('budget'),
+      timeline: form.get('timeline'),
+      message: form.get('message'),
+      website: form.get('website'),
+      turnstileToken: form.get('cf-turnstile-response') || form.get('turnstileToken')
+    },
+    files
+  };
+}
+
+function validateAttachmentMetadata(values) {
+  const files = [];
+  let totalBytes = 0;
+
+  for (const value of values) {
+    // Browsers include one empty File when no optional file is selected.
+    if (isFile(value) && value.size === 0 && !value.name) continue;
+    if (!isFile(value) || !value.name || !ALLOWED_ATTACHMENT_TYPES.has(value.type)) return null;
+    if (value.size <= 0 || value.size > MAX_ATTACHMENT_BYTES) return null;
+
+    totalBytes += value.size;
+    if (totalBytes > MAX_TOTAL_ATTACHMENT_BYTES || files.length >= MAX_ATTACHMENTS) return null;
+    files.push(value);
+  }
+
+  return files;
+}
+
+function isFile(value) {
+  return value && typeof value === 'object' && typeof value.arrayBuffer === 'function' && typeof value.name === 'string';
 }
 
 function clean(value, maxLength) {
@@ -142,7 +218,9 @@ async function verifyTurnstile(token, remoteip, env) {
   }
 }
 
-function sendEmail(submission, env) {
+async function sendEmail(submission, env) {
+  const attachments = await encodeAttachments(submission.files);
+  const attachmentNames = attachments.map(attachment => attachment.filename);
   const text = [
     'SIHT DISAIN — UUS KONTAKTIPÄRING',
     '',
@@ -152,6 +230,7 @@ function sendEmail(submission, env) {
     `Soovitud teenus: ${submission.service}`,
     `Eelarvevahemik: ${submission.budget || '—'}`,
     `Soovitud ajaraam: ${submission.timeline || '—'}`,
+    `Lisatud failid: ${attachmentNames.length ? attachmentNames.join(', ') : '—'}`,
     '',
     'Sõnum:',
     submission.message
@@ -169,9 +248,45 @@ function sendEmail(submission, env) {
       to: [env.CONTACT_EMAIL],
       reply_to: submission.email,
       subject: 'Uus päring — Siht Disain',
-      text
+      text,
+      ...(attachments.length ? { attachments } : {})
     })
   });
+}
+
+async function encodeAttachments(files) {
+  const attachments = [];
+  for (const file of files) {
+    const buffer = await file.arrayBuffer();
+    if (!hasExpectedFileSignature(file.type, new Uint8Array(buffer))) throw new Error('Unexpected file signature');
+    attachments.push({
+      filename: cleanFilename(file.name),
+      content: arrayBufferToBase64(buffer)
+    });
+  }
+  return attachments;
+}
+
+function cleanFilename(filename) {
+  return filename.replace(/[\\/:*?"<>|\u0000-\u001F\u007F]/g, '-').trim().slice(0, 120) || 'attachment';
+}
+
+function hasExpectedFileSignature(type, bytes) {
+  if (type === 'image/jpeg') return bytes.length >= 3 && bytes[0] === 0xFF && bytes[1] === 0xD8 && bytes[2] === 0xFF;
+  if (type === 'image/png') return bytes.length >= 8 && bytes.slice(0, 8).every((byte, index) => byte === [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A][index]);
+  if (type === 'image/webp') return bytes.length >= 12 && String.fromCharCode(...bytes.slice(0, 4)) === 'RIFF' && String.fromCharCode(...bytes.slice(8, 12)) === 'WEBP';
+  if (type === 'application/pdf') return bytes.length >= 5 && String.fromCharCode(...bytes.slice(0, 5)) === '%PDF-';
+  return false;
+}
+
+function arrayBufferToBase64(buffer) {
+  const bytes = new Uint8Array(buffer);
+  const chunkSize = 0x8000;
+  let binary = '';
+  for (let start = 0; start < bytes.length; start += chunkSize) {
+    binary += String.fromCharCode(...bytes.subarray(start, start + chunkSize));
+  }
+  return btoa(binary);
 }
 
 function json(payload, status = 200, extraHeaders = {}) {
