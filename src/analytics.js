@@ -39,6 +39,7 @@
     if (target.matches('a[href*="behance.net"]')) return 'behance_open';
     if (target.matches('a[href*="linkedin.com"]')) return 'linkedin_open';
     if (target.matches('a[href^="mailto:"]')) return 'email_open';
+    if (target.matches('.nav-links a[href*="team"], .mobile-menu-links a[href*="team"]')) return 'team_nav';
     if (target.matches('.nav-links a[href*="portfolio"], .mobile-menu-links a[href*="portfolio"]')) return 'portfolio_nav';
     return '';
   }
