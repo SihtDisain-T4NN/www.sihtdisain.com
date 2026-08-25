@@ -6,7 +6,8 @@ export async function onRequestGet({ env }) {
   const urls = [
     { loc: `${SITE}/`, priority: '1.0' },
     { loc: `${SITE}/portfolio.html`, priority: '0.9' },
-    { loc: `${SITE}/team.html`, priority: '0.7' }
+    { loc: `${SITE}/team.html`, priority: '0.7' },
+    { loc: `${SITE}/kohtumine.html`, priority: '0.8' }
   ];
   const store = getStore(env);
   const projects = store ? await store.get('portfolio:projects', { type: 'json' }) : null;
