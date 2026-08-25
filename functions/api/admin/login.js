@@ -7,13 +7,17 @@ import {
   readJson,
   revokeSession,
   sessionCookie,
-  sha256
+  sha256,
+  strictSameOrigin
 } from '../../lib/admin.js';
+import { logActivity } from '../../lib/insights.js';
 
 const CODE_TTL_SECONDS = 10 * 60;
 const MAX_CODE_REQUESTS = 3;
+const MAX_CODE_ATTEMPTS = 5;
 
 export async function onRequestPost({ request, env }) {
+  if (!strictSameOrigin(request)) return json({ success: false, error: 'Vigane päring.' }, 403);
   const payload = await readJson(request);
   if (!payload || !['request-code', 'verify-code'].includes(payload.action)) {
     return json({ success: false, error: 'Vigane päring.' }, 400);
@@ -27,10 +31,11 @@ export async function onRequestPost({ request, env }) {
 
   return payload.action === 'request-code'
     ? requestCode(request, env, store)
-    : verifyCode(payload, store);
+    : verifyCode(payload, env, store);
 }
 
 export async function onRequestDelete({ request, env }) {
+  if (!strictSameOrigin(request)) return json({ success: false, error: 'Vigane päring.' }, 403);
   await revokeSession(request, env);
   return json({ success: true }, 200, { 'Set-Cookie': expiredSessionCookie() });
 }
@@ -44,7 +49,11 @@ async function requestCode(request, env, store) {
 
   const code = createCode();
   const challengeId = crypto.randomUUID();
-  await store.put(`admin:challenge:${challengeId}`, JSON.stringify({ codeHash: await sha256(code) }), { expirationTtl: CODE_TTL_SECONDS });
+  await store.put(`admin:challenge:${challengeId}`, JSON.stringify({
+    codeHash: await sha256(code),
+    attempts: 0,
+    expiresAt: Date.now() + CODE_TTL_SECONDS * 1000
+  }), { expirationTtl: CODE_TTL_SECONDS });
   await store.put(rateKey, String(requested + 1), { expirationTtl: 15 * 60 });
 
   const response = await fetch('https://api.resend.com/emails', {
@@ -72,7 +81,7 @@ async function requestCode(request, env, store) {
   return json({ success: true, challengeId, expiresIn: CODE_TTL_SECONDS });
 }
 
-async function verifyCode(payload, store) {
+async function verifyCode(payload, env, store) {
   const challengeId = typeof payload.challengeId === 'string' ? payload.challengeId : '';
   const code = typeof payload.code === 'string' ? payload.code.replace(/\s/g, '') : '';
   if (!/^[0-9a-f-]{36}$/i.test(challengeId) || !/^\d{6}$/.test(code)) {
@@ -80,13 +89,27 @@ async function verifyCode(payload, store) {
   }
 
   const challenge = await store.get(`admin:challenge:${challengeId}`, { type: 'json' });
-  if (!challenge || challenge.codeHash !== await sha256(code)) {
+  if (!challenge || !Number.isFinite(challenge.expiresAt) || challenge.expiresAt <= Date.now()) {
+    if (challenge) await store.delete(`admin:challenge:${challengeId}`);
+    return json({ success: false, error: 'Kood ei kehti või on aegunud.' }, 401);
+  }
+
+  if (challenge.codeHash !== await sha256(code)) {
+    const attempts = Number(challenge.attempts || 0) + 1;
+    if (attempts >= MAX_CODE_ATTEMPTS) {
+      await store.delete(`admin:challenge:${challengeId}`);
+    } else {
+      await store.put(`admin:challenge:${challengeId}`, JSON.stringify({ ...challenge, attempts }), {
+        expirationTtl: Math.max(1, Math.ceil((challenge.expiresAt - Date.now()) / 1000))
+      });
+    }
     return json({ success: false, error: 'Kood ei kehti või on aegunud.' }, 401);
   }
 
   await store.delete(`admin:challenge:${challengeId}`);
   const token = crypto.randomUUID();
   await store.put(`admin:session:${token}`, JSON.stringify({ role: 'owner' }), { expirationTtl: SESSION_TTL_SECONDS });
+  await logActivity(env, { type: 'admin_login', actor: 'Omanik', message: 'Omanik logis haldusalasse sisse.' });
   return json({ success: true }, 200, { 'Set-Cookie': sessionCookie(token) });
 }
 
