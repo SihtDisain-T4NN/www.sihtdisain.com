@@ -1,5 +1,6 @@
 import { logActivity } from '../lib/insights.js';
 
+const CALL_SERVICE = 'Tasuta 15 min kõne';
 const ALLOWED_SERVICES = new Set([
   'Logo & bränding',
   'Bränd + veeb',
@@ -8,7 +9,8 @@ const ALLOWED_SERVICES = new Set([
   'UI / UX',
   'Digitaalsed kampaaniad',
   'Graafiline disain',
-  'Vajan suunamist'
+  'Vajan suunamist',
+  CALL_SERVICE
 ]);
 const ALLOWED_BUDGETS = new Set([
   'Alla 1 500 €',
@@ -28,6 +30,7 @@ const ALLOWED_ATTACHMENT_TYPES = new Set([
   'image/webp',
   'application/pdf'
 ]);
+const ALLOWED_MEETING_TIMES = new Set(['10:00', '11:00', '12:00', '14:00', '15:00', '16:00']);
 
 const MAX_REQUESTS_PER_HOUR = 3;
 const MAX_ATTACHMENTS = 3;
@@ -60,6 +63,9 @@ export async function onRequestPost({ request, env }) {
     budget: clean(body.budget, 80),
     timeline: clean(body.timeline, 100),
     message: clean(body.message, 5000),
+    meetingDate: clean(body.meetingDate, 20),
+    meetingTime: clean(body.meetingTime, 20),
+    auditSummary: clean(body.auditSummary, 2000),
     turnstileToken: clean(body.turnstileToken, 2048),
     files
   };
@@ -99,8 +105,8 @@ export async function onRequestPost({ request, env }) {
   try {
     await logActivity(env, {
       type: 'contact_submitted',
-      message: `${submission.name} saatis päringu`,
-      meta: { service: submission.service }
+      message: submission.service === CALL_SERVICE ? `${submission.name} broneeris tasuta 15 min kõne` : `${submission.name} saatis päringu`,
+      meta: { service: submission.service, ...(submission.service === CALL_SERVICE ? { meetingDate: submission.meetingDate, audit: submission.auditSummary ? 'täidetud' : 'täitmata' } : {}) }
     });
   } catch (error) {
     console.warn('Contact activity log failed:', error);
@@ -148,6 +154,9 @@ async function readSubmission(request) {
       budget: form.get('budget'),
       timeline: form.get('timeline'),
       message: form.get('message'),
+      meetingDate: form.get('meetingDate'),
+      meetingTime: form.get('meetingTime'),
+      auditSummary: form.get('auditSummary'),
       website: form.get('website'),
       turnstileToken: form.get('cf-turnstile-response') || form.get('turnstileToken')
     },
@@ -183,7 +192,7 @@ function clean(value, maxLength) {
     : '';
 }
 
-function isValidSubmission({ name, email, company, service, budget, timeline, message, turnstileToken }) {
+function isValidSubmission({ name, email, company, service, budget, timeline, message, meetingDate, meetingTime, auditSummary, turnstileToken }) {
   const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   return name.length >= 2 && name.length <= 120
     && emailPattern.test(email)
@@ -197,8 +206,16 @@ function isValidSubmission({ name, email, company, service, budget, timeline, me
     && timeline.length <= 100
     && message.length >= 10
     && message.length <= 5000
+    && auditSummary.length <= 2000
+    && (service !== CALL_SERVICE || (isValidMeetingDate(meetingDate) && ALLOWED_MEETING_TIMES.has(meetingTime)))
     && turnstileToken.length > 0
     && turnstileToken.length <= 2048;
+}
+
+function isValidMeetingDate(value) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const date = new Date(`${value}T12:00:00Z`);
+  return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value;
 }
 
 function hasRequiredConfiguration(env) {
@@ -233,7 +250,10 @@ async function verifyTurnstile(token, remoteip, env) {
 async function sendEmail(submission, env) {
   const attachments = await encodeAttachments(submission.files);
   const attachmentNames = attachments.map(attachment => attachment.filename);
-  const subject = `Päring: ${submission.service} — ${submission.name}`;
+  const isCallBooking = submission.service === CALL_SERVICE;
+  const subject = isCallBooking
+    ? `Kõnesoov: ${submission.meetingDate} ${submission.meetingTime} — ${submission.name}`
+    : `Päring: ${submission.service} — ${submission.name}`;
   const text = [
     'UUS KONTAKTIPÄRING',
     '',
@@ -246,6 +266,7 @@ async function sendEmail(submission, env) {
     `Teenuse soov: ${submission.service}`,
     `Eelarve: ${submission.budget || 'Pole valitud'}`,
     `Ajaraam: ${submission.timeline || 'Pole valitud'}`,
+    ...(isCallBooking ? ['', 'KÕNESOOV', `Soovitud kuupäev: ${submission.meetingDate}`, `Soovitud kellaaeg: ${submission.meetingTime}`, `Brändiaudit: ${submission.auditSummary || 'Pole täidetud'}`] : []),
     `Manused: ${attachmentNames.length ? attachmentNames.join(', ') : 'Pole lisatud'}`,
     '',
     'KLIENDI SÕNUM',
@@ -274,6 +295,7 @@ async function sendEmail(submission, env) {
 
 function createEmailHtml(submission, attachmentNames) {
   const value = text => escapeHtml(text || 'Pole lisatud');
+  const isCallBooking = submission.service === CALL_SERVICE;
   const attachmentList = attachmentNames.length
     ? attachmentNames.map(name => `<li style="margin:0 0 6px">${escapeHtml(name)}</li>`).join('')
     : '<li style="margin:0">Pole lisatud</li>';
@@ -289,7 +311,7 @@ function createEmailHtml(submission, attachmentNames) {
         </header>
         <div style="padding:30px">
           <p style="margin:0 0 24px;padding:14px 16px;border-left:3px solid #ff5b00;background:#fff5ef;font-size:15px;line-height:1.5">
-            <strong>${value(submission.name)}</strong> soovib teenust: <strong>${value(submission.service)}</strong>
+            <strong>${value(submission.name)}</strong> ${isCallBooking ? 'soovib tasuta 15-minutilist brändikõnet.' : `soovib teenust: <strong>${value(submission.service)}</strong>`}
           </p>
           ${emailSection('Kliendi andmed', [
             ['Nimi', value(submission.name)],
@@ -301,6 +323,11 @@ function createEmailHtml(submission, attachmentNames) {
             ['Eelarve', value(submission.budget)],
             ['Ajaraam', value(submission.timeline)]
           ])}
+          ${isCallBooking ? emailSection('Kõnesoov', [
+            ['Soovitud kuupäev', value(submission.meetingDate)],
+            ['Soovitud kellaaeg', value(submission.meetingTime)],
+            ['Brändiaudit', value(submission.auditSummary || 'Pole täidetud')]
+          ]) : ''}
           <section style="margin:30px 0 0">
             <p style="margin:0 0 10px;font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#696965">Kliendi sõnum</p>
             <div style="padding:18px 20px;background:#f4f4f2;border-radius:10px;font-size:16px;line-height:1.65;white-space:pre-wrap">${value(submission.message)}</div>
