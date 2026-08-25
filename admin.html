@@ -10,7 +10,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,700;1,700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="./src/admin.css?v=20260824-1" />
+    <link rel="stylesheet" href="./src/admin.css?v=20260825-1" />
   </head>
   <body>
     <main class="admin-shell">
@@ -39,6 +39,50 @@
           <div><p class="admin-kicker">OMANIKU VAADE</p><h1>PORTFOLIO<br/><i>HALDUS.</i></h1></div>
           <div class="admin-actions"><a class="admin-outline" href="./portfolio.html" target="_blank" rel="noopener">AVA LIVE LEHT ↗</a><a class="admin-outline" href="/api/admin/newsletter.csv">UUDISKIRI CSV ↓</a><button class="admin-outline" type="button" data-logout>LOGI VÄLJA</button></div>
         </header>
+
+        <section class="admin-dashboard" data-dashboard>
+          <header class="admin-dashboard-head">
+            <div><p class="admin-kicker">SIHT PULSS / VIIMASED 24H</p><h2>STUUDIO<br/><i>ÜLEVAADE.</i></h2><p>Privaatsussõbralik statistika: mõõdame anonüümseid külastusi ja olulisi tegevusi, mitte inimeste isikuandmeid.</p></div>
+            <div class="admin-dashboard-actions"><button class="admin-outline" type="button" data-refresh-dashboard>VÄRSKENDA ↻</button><button class="admin-button" type="button" data-run-health>KONTROLLI VEEBILEHTE <b>↗</b></button></div>
+          </header>
+
+          <div class="admin-metrics" aria-label="Tänane statistika">
+            <article><span>KÜLASTUSI TÄNA</span><strong data-dash-pageviews>—</strong><small data-dash-pageviews-note>alates seadistusest</small></article>
+            <article><span>UNIKAALSEID KÜLASTAJAID</span><strong data-dash-visitors>—</strong><small data-dash-visitors-note>selle brauseriseansi järgi</small></article>
+            <article><span>NUPUKLIKKE</span><strong data-dash-clicks>—</strong><small data-dash-clicks-note>olulised tegevused</small></article>
+            <article><span>UUSI PÄRINGUID</span><strong data-dash-contacts>—</strong><small data-dash-contacts-note>e-postiga kinnitatud</small></article>
+          </div>
+
+          <div class="admin-dashboard-grid">
+            <article class="admin-dashboard-card admin-health-card">
+              <div class="admin-card-head"><div><p>SÜSTEEMI STAATUS</p><strong data-health-title>KONTROLLIMATA</strong></div><span class="admin-health-dot" data-health-dot aria-hidden="true"></span></div>
+              <p class="admin-health-copy" data-health-copy>Vajuta „Kontrolli veebilehte”, et kontrollida avalehte, portfooliot, API-t ja ühendusi.</p>
+              <ul class="admin-health-list" data-health-list><li><span>Avaleht</span><b>—</b></li><li><span>Portfoolio</span><b>—</b></li><li><span>Päringuvorm</span><b>—</b></li><li><span>Andmete salvestus</span><b>—</b></li></ul>
+              <p class="admin-card-note" data-health-time>Viimane kontroll puudub.</p>
+            </article>
+
+            <form class="admin-dashboard-card admin-expiry-card" data-expiry-form>
+              <div class="admin-card-head"><div><p>TAHTAEG</p><strong>DOMEEN &amp; SSL</strong></div><span class="admin-card-chip">MEELDETULETUS</span></div>
+              <p class="admin-health-copy">Lisa kuupäevad vastavalt Veebimajutuse arvele ja Cloudflare sertifikaadi infole. Paneel loendab automaatselt päevi.</p>
+              <label class="admin-expiry-field">DOMEENI UUENDAMINE<input type="date" name="domainExpiry" data-domain-expiry /></label>
+              <p class="admin-expiry-count" data-domain-count>Kuupäev puudub</p>
+              <label class="admin-expiry-field">SSL SERTIFIKAAT<input type="date" name="sslExpiry" data-ssl-expiry /></label>
+              <p class="admin-expiry-count" data-ssl-count>Kuupäev puudub</p>
+              <div class="admin-expiry-footer"><p class="admin-status" data-expiry-status aria-live="polite"></p><button class="admin-outline" type="submit">SALVESTA KUUPÄEVAD</button></div>
+            </form>
+
+            <article class="admin-dashboard-card admin-click-card">
+              <div class="admin-card-head"><div><p>KLIKID / 7 PÄEVA</p><strong>MIS HUVITAB?</strong></div><span class="admin-card-chip" data-clicks-total>—</span></div>
+              <ol class="admin-click-list" data-click-list><li><span>Andmed kogunevad pärast avaldamist.</span><b>—</b></li></ol>
+              <p class="admin-card-note">Näitab kõige sagedamini vajutatud olulisi tegevusi.</p>
+            </article>
+
+            <article class="admin-dashboard-card admin-activity-card">
+              <div class="admin-card-head"><div><p>TEGEVUSLOGI</p><strong>VIIMASED SÜNDMUSED</strong></div><span class="admin-card-chip" data-activity-total>—</span></div>
+              <ol class="admin-activity-list" data-activity-list><li><span class="admin-activity-mark"></span><div><strong>Logi on valmis.</strong><small>Uued päringud, pildid ja projektid ilmuvad siia.</small></div><time>—</time></li></ol>
+            </article>
+          </div>
+        </section>
 
         <div class="admin-layout">
           <aside class="admin-project-panel">
@@ -76,6 +120,6 @@
       </section>
     </main>
     <script src="./data/projects.js"></script>
-    <script src="./src/admin.js?v=20260824-1"></script>
+    <script src="./src/admin.js?v=20260825-1"></script>
   </body>
 </html>
