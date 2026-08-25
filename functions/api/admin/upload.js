@@ -1,4 +1,5 @@
 import { json, requireAdmin, sameOrigin } from '../../lib/admin.js';
+import { logActivity } from '../../lib/insights.js';
 
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
 const IMAGE_TYPES = new Map([
@@ -38,6 +39,17 @@ export async function onRequestPost({ request, env }) {
     httpMetadata: { contentType: file.type, cacheControl: 'public, max-age=31536000, immutable' },
     customMetadata: { originalName: cleanFilename(file.name) }
   });
+
+  try {
+    await logActivity(env, {
+      type: 'media_uploaded',
+      actor: 'Omanik',
+      message: `Uus pilt lisati: ${cleanFilename(file.name)}`,
+      meta: { file: cleanFilename(file.name) }
+    });
+  } catch (error) {
+    console.warn('Portfolio upload activity log failed:', error);
+  }
 
   return json({ success: true, url: `/api/media/${filename}` });
 }
