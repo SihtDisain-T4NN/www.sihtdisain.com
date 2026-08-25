@@ -1,4 +1,5 @@
 import { cleanText, getStore, json, readJson, requireAdmin, sameOrigin } from '../../lib/admin.js';
+import { logActivity } from '../../lib/insights.js';
 
 const PROJECTS_KEY = 'portfolio:projects';
 const CATEGORIES = {
@@ -27,7 +28,9 @@ export async function onRequestPut({ request, env }) {
   if (!projects) return json({ success: false, error: 'Kontrolli projekti välju ja pilte.' }, 400);
 
   const store = getStore(env);
+  const previous = await readProjects(store) || [];
   await store.put(PROJECTS_KEY, JSON.stringify(projects));
+  await logProjectChanges(env, previous, projects);
   return json({ success: true, projects, managed: true });
 }
 
@@ -110,4 +113,24 @@ function cleanImage(value) {
     || /^https:\/\/[^\s]+$/i.test(source)
     ? source
     : '';
+}
+
+async function logProjectChanges(env, previous, current) {
+  const before = new Map(previous.map(project => [project.id, project]));
+  const after = new Map(current.map(project => [project.id, project]));
+
+  for (const project of current) {
+    const oldProject = before.get(project.id);
+    if (!oldProject) {
+      await logActivity(env, { type: 'project_published', actor: 'Omanik', message: `Projekt avaldati: ${project.title}`, meta: { projectId: project.id } });
+    } else if (JSON.stringify(oldProject) !== JSON.stringify(project)) {
+      await logActivity(env, { type: 'project_updated', actor: 'Omanik', message: `Projekt uuendati: ${project.title}`, meta: { projectId: project.id } });
+    }
+  }
+
+  for (const project of previous) {
+    if (!after.has(project.id)) {
+      await logActivity(env, { type: 'project_deleted', actor: 'Omanik', message: `Projekt eemaldati: ${project.title}`, meta: { projectId: project.id } });
+    }
+  }
 }
