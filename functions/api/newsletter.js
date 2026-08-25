@@ -1,4 +1,5 @@
 import { cleanText, getIp, getStore, json, sameOrigin, sha256 } from '../lib/admin.js';
+import { logActivity } from '../lib/insights.js';
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MAX_REQUESTS_PER_DAY = 4;
@@ -29,6 +30,7 @@ export async function onRequestPost({ request, env }) {
   const existing = await store.get(emailKey, { type: 'json' });
   if (!existing) {
     await store.put(emailKey, JSON.stringify({ email, joinedAt: new Date().toISOString(), language: cleanText(payload?.language, 2, 'et') || 'et' }));
+    await logActivity(env, { type: 'newsletter_subscribed', message: 'Uus inimene liitus SIHT kirjaga.' });
   }
 
   return json({ success: true, alreadySubscribed: Boolean(existing) });
