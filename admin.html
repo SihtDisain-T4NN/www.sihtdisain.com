@@ -117,9 +117,32 @@
             </form>
           </section>
         </div>
+
+        <section class="admin-team-management" data-team-management>
+          <header class="admin-team-head"><div><p class="admin-kicker">MEESKOND / AVALIK LEHT</p><h2>TIIMI<br/><i>HALDUS.</i></h2><p>Lisa, muuda või eemalda töötajaid. Nimi, roll, tutvustus ja pilt jõuavad kohe Meeskond lehele.</p></div><a class="admin-outline" href="./team.html" target="_blank" rel="noopener">AVA MEESKONNALEHT ↗</a></header>
+          <div class="admin-layout admin-team-layout">
+            <aside class="admin-project-panel">
+              <div class="admin-panel-top"><p>MEESKOND <span data-team-count>00</span></p><button class="admin-add" type="button" data-new-team-member>+ LISA</button></div>
+              <div class="admin-project-list" data-team-list></div>
+            </aside>
+            <section class="admin-editor" data-team-editor>
+              <div class="admin-empty-editor" data-team-empty><p>VALI VASAKULT<br/>TÖÖTAJA VÕI LISA <i>UUS.</i></p></div>
+              <form class="admin-form" data-team-form hidden>
+                <header class="admin-form-head"><div><p class="admin-kicker" data-team-form-mode>MEESKOND</p><h2 data-team-form-title>UUS TÖÖTAJA</h2></div></header>
+                <div class="admin-form-grid">
+                  <label class="admin-field">NIMI<input name="name" maxlength="80" required placeholder="Näiteks Mari Maasikas" /></label>
+                  <label class="admin-field">ROLL<input name="role" maxlength="90" required placeholder="Näiteks Graafiline disainer" /></label>
+                  <label class="admin-field admin-field-wide">TUTVUSTUS<textarea name="intro" rows="4" maxlength="500" minlength="8" required placeholder="Lühike tutvustus inimese tugevustest ja rollist tiimis."></textarea><small>See tekst kuvatakse avalikul Meeskond lehel.</small></label>
+                </div>
+                <section class="admin-block"><div class="admin-block-head"><p>TÖÖTAJA PILT</p><span>Valikuline. Kui pilti ei lisa, kasutatakse abstraktset disainikaarti.</span></div><div class="admin-image-control"><div class="admin-image-preview" data-team-photo-preview><span>PILTI POLE</span></div><div><input class="admin-file-input" id="team-photo-upload" type="file" accept="image/jpeg,image/png,image/webp" data-team-photo-upload /><label class="admin-upload-button" for="team-photo-upload">LAE PILT ÜLES <b>+</b></label><p class="admin-upload-note">JPG, PNG või WEBP · kuni 10 MB</p><input type="hidden" name="image" /></div></div></section>
+                <footer class="admin-form-footer"><button class="admin-delete" type="button" data-delete-team-member>EEMALDA TÖÖTAJA</button><div><p class="admin-status" data-team-save-status aria-live="polite"></p><button class="admin-button" type="submit">SALVESTA TÖÖTAJA <b>→</b></button></div></footer>
+              </form>
+            </section>
+          </div>
+        </section>
       </section>
     </main>
     <script src="./data/projects.js"></script>
-    <script src="./src/admin.js?v=20260825-1"></script>
+    <script src="./src/admin.js?v=20260825-2"></script>
   </body>
 </html>
