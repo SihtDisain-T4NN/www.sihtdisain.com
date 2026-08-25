@@ -38,9 +38,20 @@
   const sslCount = document.querySelector('[data-ssl-count]');
   const expiryForm = document.querySelector('[data-expiry-form]');
   const expiryStatus = document.querySelector('[data-expiry-status]');
+  const teamList = document.querySelector('[data-team-list]');
+  const teamCount = document.querySelector('[data-team-count]');
+  const teamForm = document.querySelector('[data-team-form]');
+  const teamEmpty = document.querySelector('[data-team-empty]');
+  const teamFormTitle = document.querySelector('[data-team-form-title]');
+  const teamFormMode = document.querySelector('[data-team-form-mode]');
+  const teamPhotoPreview = document.querySelector('[data-team-photo-preview]');
+  const teamPhotoUpload = document.querySelector('[data-team-photo-upload]');
+  const teamSaveStatus = document.querySelector('[data-team-save-status]');
   let challengeId = '';
   let projects = [];
   let editingId = '';
+  let teamMembers = [];
+  let editingTeamId = '';
 
   const clone = value => JSON.parse(JSON.stringify(value));
   const escapeHtml = value => String(value).replace(/[&<>'"]/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[character]));
@@ -90,9 +101,11 @@
     app.hidden = false;
     setStatus(saveStatus, 'Laen portfolio andmeid…');
     try {
-      const data = await api('/api/admin/projects');
+      const [data, teamData] = await Promise.all([api('/api/admin/projects'), api('/api/admin/team')]);
       projects = data.managed ? data.projects : clone(staticProjects);
+      teamMembers = teamData.members || [];
       renderList();
+      renderTeamList();
       setStatus(saveStatus, data.managed ? 'Portfolio on valmis muutmiseks.' : 'Esimesel salvestamisel tuuakse olemasolev portfolio haldusalasse.', data.managed ? 'success' : '');
       loadDashboard();
     } catch (error) {
@@ -105,6 +118,21 @@
   function renderList() {
     projectCount.textContent = String(projects.length).padStart(2, '0');
     projectList.innerHTML = projects.map((project, index) => `<button class="admin-project-item ${project.id === editingId ? 'is-active' : ''}" type="button" data-edit-project="${escapeAttribute(project.id)}"><img src="${escapeAttribute(project.image)}" alt="" /><span><strong>${String(index + 1).padStart(2, '0')} / ${escapeHtml(project.title)}</strong><small>${escapeHtml(project.categoryLabel || project.category)} · ${escapeHtml(project.year)}</small></span><i>↗</i></button>`).join('') || '<p class="admin-status">Ühtegi projekti veel pole.</p>';
+  }
+
+  function renderTeamList() {
+    if (!teamList || !teamCount) return;
+    teamCount.textContent = String(teamMembers.length).padStart(2, '0');
+    teamList.innerHTML = teamMembers.map((member, index) => {
+      const visual = member.image
+        ? `<img src="${escapeAttribute(member.image)}" alt="" />`
+        : `<span class="admin-team-initials">${escapeHtml(initials(member.name))}</span>`;
+      return `<button class="admin-project-item admin-team-member-item ${member.id === editingTeamId ? 'is-active' : ''}" type="button" data-edit-team-member="${escapeAttribute(member.id)}">${visual}<span><strong>${String(index + 1).padStart(2, '0')} / ${escapeHtml(member.name)}</strong><small>${escapeHtml(member.role)}</small></span><i>↗</i></button>`;
+    }).join('') || '<p class="admin-status">Ühtegi töötajat veel pole.</p>';
+  }
+
+  function initials(name) {
+    return String(name || '').split(/\s+/).filter(Boolean).map(part => part[0]).join('').slice(0, 2).toUpperCase() || 'SIHT';
   }
 
   function startNewProject() {
@@ -158,6 +186,46 @@
     window.scrollTo({ top: form.getBoundingClientRect().top + window.scrollY - 18, behavior: 'smooth' });
   }
 
+  function startNewTeamMember() {
+    if (!teamForm) return;
+    editingTeamId = '';
+    teamForm.reset();
+    teamFormMode.textContent = 'UUS MEESKONNA LIIGE';
+    teamFormTitle.textContent = 'UUS TÖÖTAJA';
+    teamForm.elements.image.value = '';
+    renderTeamPhoto('');
+    teamEmpty.hidden = true;
+    teamForm.hidden = false;
+    setStatus(teamSaveStatus, 'Lisa nimi, roll ja lühike tutvustus. Pilt on valikuline.');
+    renderTeamList();
+    teamForm.elements.name.focus();
+    window.scrollTo({ top: teamForm.getBoundingClientRect().top + window.scrollY - 18, behavior: 'smooth' });
+  }
+
+  function editTeamMember(id) {
+    const member = teamMembers.find(item => item.id === id);
+    if (!member || !teamForm) return;
+    editingTeamId = id;
+    teamForm.reset();
+    teamFormMode.textContent = 'MEESKONNA LIIGE';
+    teamFormTitle.textContent = member.name;
+    teamForm.elements.name.value = member.name;
+    teamForm.elements.role.value = member.role;
+    teamForm.elements.intro.value = member.intro;
+    teamForm.elements.image.value = member.image || '';
+    renderTeamPhoto(member.image);
+    teamEmpty.hidden = true;
+    teamForm.hidden = false;
+    setStatus(teamSaveStatus, '');
+    renderTeamList();
+    window.scrollTo({ top: teamForm.getBoundingClientRect().top + window.scrollY - 18, behavior: 'smooth' });
+  }
+
+  function renderTeamPhoto(source) {
+    if (!teamPhotoPreview) return;
+    teamPhotoPreview.innerHTML = source ? `<img src="${escapeAttribute(source)}" alt="Töötaja pildi eelvaade" />` : '<span>PILTI POLE</span>';
+  }
+
   function renderCover(source) {
     coverPreview.innerHTML = source ? `<img src="${escapeAttribute(source)}" alt="Kaanepildi eelvaade" />` : '<span>PILTI POLE</span>';
   }
@@ -175,14 +243,14 @@
     galleryEditor.innerHTML = gallery().map((source, index) => `<div class="admin-gallery-card"><img src="${escapeAttribute(source)}" alt="Galerii pilt ${index + 1}" /><button class="admin-gallery-remove" type="button" data-remove-gallery="${index}" aria-label="Eemalda galerii pilt">×</button></div>`).join('') || '<p class="admin-status">Lisa vähemalt üks galerii pilt. Kaanepildi saad soovi korral ka galeriisse lisada.</p>';
   }
 
-  async function uploadImages(files) {
+  async function uploadImages(files, statusTarget = saveStatus) {
     const selected = [...files];
     if (!selected.length) return [];
     const uploads = [];
     for (const file of selected) {
       const body = new FormData();
       body.append('image', file);
-      setStatus(saveStatus, `Laen üles: ${file.name}`);
+      setStatus(statusTarget, `Laen üles: ${file.name}`);
       const data = await api('/api/admin/upload', { method: 'POST', body });
       uploads.push(data.url);
     }
@@ -216,11 +284,31 @@
     return `project-${crypto.randomUUID().replace(/-/g, '').slice(0, 12)}`;
   }
 
+  function collectTeamMember() {
+    return {
+      id: editingTeamId || `member-${crypto.randomUUID().replace(/-/g, '').slice(0, 12)}`,
+      name: teamForm.elements.name.value.trim(),
+      role: teamForm.elements.role.value.trim(),
+      intro: teamForm.elements.intro.value.trim(),
+      image: teamForm.elements.image.value.trim()
+    };
+  }
+
   async function saveProjects(nextProjects, message) {
     setStatus(saveStatus, 'Salvestan…');
     const data = await api('/api/admin/projects', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ projects: nextProjects }) });
     projects = data.projects;
     setStatus(saveStatus, message, 'success');
+    return data;
+  }
+
+  async function saveTeam(nextMembers, message) {
+    setStatus(teamSaveStatus, 'Salvestan…');
+    const data = await api('/api/admin/team', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ members: nextMembers }) });
+    teamMembers = data.members;
+    setStatus(teamSaveStatus, message, 'success');
+    renderTeamList();
+    loadDashboard();
     return data;
   }
 
@@ -323,7 +411,7 @@
 
   function clickLabel(name) {
     return ({
-      contact_cta: 'Kontakti CTA', contact_submit_click: 'Päringu saatmise nupp', scroll_more: 'Lehe kerimine', service_choice: 'Teenuse valik', project_open: 'Projekti avamine', faq_chat_open: 'FAQ abi avamine', faq_question: 'FAQ küsimus', newsletter_submit: 'Uudiskirjaga liitumine', copy_iban: 'IBAN-i kopeerimine', instagram_open: 'Instagrami avamine', behance_open: 'Behance’i avamine', linkedin_open: 'LinkedIni avamine', email_open: 'E-posti avamine', portfolio_nav: 'Portfoolio navigatsioon'
+      contact_cta: 'Kontakti CTA', contact_submit_click: 'Päringu saatmise nupp', scroll_more: 'Lehe kerimine', service_choice: 'Teenuse valik', project_open: 'Projekti avamine', faq_chat_open: 'FAQ abi avamine', faq_question: 'FAQ küsimus', newsletter_submit: 'Uudiskirjaga liitumine', copy_iban: 'IBAN-i kopeerimine', instagram_open: 'Instagrami avamine', behance_open: 'Behance’i avamine', linkedin_open: 'LinkedIni avamine', email_open: 'E-posti avamine', team_nav: 'Meeskonna navigatsioon', portfolio_nav: 'Portfoolio navigatsioon'
     })[name] || name.replace(/_/g, ' ');
   }
 
@@ -346,6 +434,12 @@
   projectList?.addEventListener('click', event => {
     const button = event.target.closest('[data-edit-project]');
     if (button) editProject(button.dataset.editProject);
+  });
+
+  document.querySelector('[data-new-team-member]')?.addEventListener('click', startNewTeamMember);
+  teamList?.addEventListener('click', event => {
+    const button = event.target.closest('[data-edit-team-member]');
+    if (button) editTeamMember(button.dataset.editTeamMember);
   });
 
   coverUpload?.addEventListener('change', async () => {
@@ -378,6 +472,17 @@
     setStatus(saveStatus, 'Galerii muutus on valmis salvestamiseks.');
   });
 
+  teamPhotoUpload?.addEventListener('change', async () => {
+    try {
+      const [url] = await uploadImages(teamPhotoUpload.files, teamSaveStatus);
+      if (!url) return;
+      teamForm.elements.image.value = url;
+      renderTeamPhoto(url);
+      setStatus(teamSaveStatus, 'Pilt lisatud. Vajuta nüüd „Salvesta töötaja”.', 'success');
+    } catch (error) { setStatus(teamSaveStatus, error.message, 'error'); }
+    teamPhotoUpload.value = '';
+  });
+
   form?.addEventListener('submit', async event => {
     event.preventDefault();
     if (!form.reportValidity()) return;
@@ -388,6 +493,17 @@
       await saveProjects(nextProjects, 'Salvestatud. Portfolio live-leht uuenes kohe.');
       editProject(project.id);
     } catch (error) { setStatus(saveStatus, error.message, 'error'); }
+  });
+
+  teamForm?.addEventListener('submit', async event => {
+    event.preventDefault();
+    if (!teamForm.reportValidity()) return;
+    const member = collectTeamMember();
+    const nextMembers = editingTeamId ? teamMembers.map(item => item.id === editingTeamId ? member : item) : [...teamMembers, member];
+    try {
+      await saveTeam(nextMembers, 'Salvestatud. Meeskonnaleht uuenes kohe.');
+      editTeamMember(member.id);
+    } catch (error) { setStatus(teamSaveStatus, error.message, 'error'); }
   });
 
   document.querySelector('[data-delete-project]')?.addEventListener('click', async () => {
@@ -401,6 +517,19 @@
       emptyEditor.hidden = false;
       renderList();
     } catch (error) { setStatus(saveStatus, error.message, 'error'); }
+  });
+
+  document.querySelector('[data-delete-team-member]')?.addEventListener('click', async () => {
+    if (!editingTeamId) return;
+    const member = teamMembers.find(item => item.id === editingTeamId);
+    if (!member || !window.confirm(`Kas eemaldad töötaja „${member.name}”?`)) return;
+    try {
+      await saveTeam(teamMembers.filter(item => item.id !== editingTeamId), 'Töötaja eemaldati Meeskond lehelt.');
+      editingTeamId = '';
+      teamForm.hidden = true;
+      teamEmpty.hidden = false;
+      renderTeamList();
+    } catch (error) { setStatus(teamSaveStatus, error.message, 'error'); }
   });
 
   document.querySelector('[data-logout]')?.addEventListener('click', async () => {
