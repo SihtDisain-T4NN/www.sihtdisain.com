@@ -1,3 +1,5 @@
+import { logActivity } from '../lib/insights.js';
+
 const ALLOWED_SERVICES = new Set([
   'Logo & bränding',
   'Bränd + veeb',
@@ -92,6 +94,16 @@ export async function onRequestPost({ request, env }) {
   if (!emailResponse.ok) {
     console.error('Resend email delivery failed:', emailResponse.status, await emailResponse.text());
     return json({ success: false, error: 'Service unavailable' }, 502);
+  }
+
+  try {
+    await logActivity(env, {
+      type: 'contact_submitted',
+      message: `${submission.name} saatis päringu`,
+      meta: { service: submission.service }
+    });
+  } catch (error) {
+    console.warn('Contact activity log failed:', error);
   }
 
   return json({ success: true });
