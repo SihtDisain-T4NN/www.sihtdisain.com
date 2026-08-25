@@ -4,6 +4,19 @@
   const closeButton = menu?.querySelector('[data-mobile-menu-close]');
   if (!menu || !toggle || !closeButton) return;
 
+  const links = menu.querySelector('.mobile-menu-links');
+  if (links && !links.querySelector('a[href="./team.html"]')) {
+    const portfolioLink = links.querySelector('a[href="./portfolio.html"]');
+    const teamLink = document.createElement('a');
+    teamLink.href = './team.html';
+    teamLink.innerHTML = '<span>03</span> MEESKOND';
+    portfolioLink?.insertAdjacentElement('afterend', teamLink);
+  }
+  links?.querySelectorAll('a').forEach((link, index) => {
+    const number = link.querySelector('span');
+    if (number) number.textContent = String(index + 1).padStart(2, '0');
+  });
+
   const setOpen = (open, returnFocus = false) => {
     menu.classList.toggle('is-open', open);
     menu.setAttribute('aria-hidden', String(!open));
