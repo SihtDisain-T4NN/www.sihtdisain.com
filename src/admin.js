@@ -18,6 +18,26 @@
   const coverUpload = document.querySelector('[data-cover-upload]');
   const galleryUpload = document.querySelector('[data-gallery-upload]');
   const saveStatus = document.querySelector('[data-save-status]');
+  const dashboard = document.querySelector('[data-dashboard]');
+  const dashboardPageViews = document.querySelector('[data-dash-pageviews]');
+  const dashboardVisitors = document.querySelector('[data-dash-visitors]');
+  const dashboardClicks = document.querySelector('[data-dash-clicks]');
+  const dashboardContacts = document.querySelector('[data-dash-contacts]');
+  const clickList = document.querySelector('[data-click-list]');
+  const clicksTotal = document.querySelector('[data-clicks-total]');
+  const activityList = document.querySelector('[data-activity-list]');
+  const activityTotal = document.querySelector('[data-activity-total]');
+  const healthCard = document.querySelector('.admin-health-card');
+  const healthTitle = document.querySelector('[data-health-title]');
+  const healthCopy = document.querySelector('[data-health-copy]');
+  const healthList = document.querySelector('[data-health-list]');
+  const healthTime = document.querySelector('[data-health-time]');
+  const domainExpiry = document.querySelector('[data-domain-expiry]');
+  const sslExpiry = document.querySelector('[data-ssl-expiry]');
+  const domainCount = document.querySelector('[data-domain-count]');
+  const sslCount = document.querySelector('[data-ssl-count]');
+  const expiryForm = document.querySelector('[data-expiry-form]');
+  const expiryStatus = document.querySelector('[data-expiry-status]');
   let challengeId = '';
   let projects = [];
   let editingId = '';
@@ -74,6 +94,7 @@
       projects = data.managed ? data.projects : clone(staticProjects);
       renderList();
       setStatus(saveStatus, data.managed ? 'Portfolio on valmis muutmiseks.' : 'Esimesel salvestamisel tuuakse olemasolev portfolio haldusalasse.', data.managed ? 'success' : '');
+      loadDashboard();
     } catch (error) {
       login.hidden = false;
       app.hidden = true;
@@ -203,6 +224,120 @@
     return data;
   }
 
+  async function loadDashboard() {
+    if (!dashboard) return;
+    try {
+      const data = await api('/api/admin/dashboard');
+      renderDashboard(data);
+    } catch (error) {
+      if (healthTitle) healthTitle.textContent = 'ANDMED POLE SAADAVAL';
+      if (healthCopy) healthCopy.textContent = error.message;
+    }
+  }
+
+  function renderDashboard(data) {
+    const summary = data.summary || {};
+    dashboardPageViews.textContent = formatNumber(summary.pageViewsToday);
+    dashboardVisitors.textContent = formatNumber(summary.uniqueVisitorsToday);
+    dashboardClicks.textContent = formatNumber(summary.buttonClicksToday);
+    dashboardContacts.textContent = formatNumber(summary.contactRequestsToday);
+    document.querySelector('[data-dash-pageviews-note]').textContent = `${formatNumber(summary.pageViewsWeek)} viimase 7 päeva jooksul`;
+    document.querySelector('[data-dash-visitors-note]').textContent = 'ühe brauseriseansi järgi';
+    document.querySelector('[data-dash-clicks-note]').textContent = 'olulised tegevused täna';
+    document.querySelector('[data-dash-contacts-note]').textContent = `${formatNumber(summary.contactRequestsWeek)} viimase 7 päeva jooksul`;
+
+    const clicks = Array.isArray(data.clicks) ? data.clicks : [];
+    clicksTotal.textContent = `${clicks.reduce((total, item) => total + Number(item.count || 0), 0)} KLIKKI`;
+    clickList.innerHTML = clicks.length
+      ? clicks.map(item => `<li><span>${escapeHtml(clickLabel(item.name))}</span><b>${formatNumber(item.count)}</b></li>`).join('')
+      : '<li><span>Andmed kogunevad pärast esimesi külastusi.</span><b>—</b></li>';
+
+    const activity = Array.isArray(data.activity) ? data.activity : [];
+    activityTotal.textContent = `${activity.length} SÜNDMUST`;
+    activityList.innerHTML = activity.length
+      ? activity.map(item => `<li><span class="admin-activity-mark"></span><div><strong>${escapeHtml(item.message || 'Uus tegevus')}</strong><small>${escapeHtml(item.actor || 'Veebileht')}</small></div><time datetime="${escapeAttribute(item.at || '')}">${escapeHtml(relativeTime(item.at))}</time></li>`).join('')
+      : '<li><span class="admin-activity-mark"></span><div><strong>Logi ootab esimest tegevust.</strong><small>Päringud, piltide lisamine ja projektide avaldamine ilmuvad siia.</small></div><time>—</time></li>';
+
+    fillExpiry(data.settings || {});
+  }
+
+  function fillExpiry(settings) {
+    if (domainExpiry && document.activeElement !== domainExpiry) domainExpiry.value = settings.domainExpiry || '';
+    if (sslExpiry && document.activeElement !== sslExpiry) sslExpiry.value = settings.sslExpiry || '';
+    renderExpiryCount(domainCount, settings.domainExpiry);
+    renderExpiryCount(sslCount, settings.sslExpiry);
+  }
+
+  function renderExpiryCount(target, value) {
+    if (!target) return;
+    target.className = 'admin-expiry-count';
+    if (!value) { target.textContent = 'Kuupäev puudub'; return; }
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+    const targetDate = new Date(`${value}T12:00:00`);
+    const days = Math.ceil((targetDate - startOfToday) / 86400000);
+    if (days < 0) { target.textContent = `Aegus ${Math.abs(days)} päeva tagasi`; target.classList.add('is-soon'); return; }
+    if (days === 0) { target.textContent = 'Aegub täna'; target.classList.add('is-soon'); return; }
+    target.textContent = `Aegub ${days} päeva pärast`;
+    target.classList.add(days <= 30 ? 'is-soon' : 'is-good');
+  }
+
+  async function runHealthCheck() {
+    const button = document.querySelector('[data-run-health]');
+    if (button) { button.disabled = true; button.textContent = 'KONTROLLIN…'; }
+    if (healthTitle) healthTitle.textContent = 'KONTROLLIN…';
+    if (healthCopy) healthCopy.textContent = 'Kontrollin avalehte, portfooliot, API-t ning olemasolevaid ühendusi.';
+    try {
+      const data = await api('/api/admin/health');
+      renderHealth(data);
+      await loadDashboard();
+    } catch (error) {
+      healthCard?.classList.add('is-unhealthy');
+      if (healthTitle) healthTitle.textContent = 'KONTROLL EI ÕNNESTUNUD';
+      if (healthCopy) healthCopy.textContent = error.message;
+    } finally {
+      if (button) { button.disabled = false; button.innerHTML = 'KONTROLLI VEEBILEHTE <b>↗</b>'; }
+    }
+  }
+
+  function renderHealth(data) {
+    const statuses = data.statuses || {};
+    healthCard?.classList.toggle('is-healthy', Boolean(data.healthy));
+    healthCard?.classList.toggle('is-unhealthy', !data.healthy);
+    if (healthTitle) healthTitle.textContent = data.healthy ? 'KÕIK TÖÖTAB' : 'VAJAB TÄHELEPANU';
+    if (healthCopy) healthCopy.textContent = data.healthy
+      ? 'Avalik veebileht, portfoolio, API ja põhisüsteemid vastasid korrektselt.'
+      : 'Vähemalt üks kontroll vajab tähelepanu. Vaata ridu allpool.';
+    const pages = Array.isArray(statuses.pages) ? statuses.pages : [];
+    const home = pages.find(item => item.path === '/');
+    const portfolio = pages.find(item => item.path === '/portfolio');
+    const rows = [
+      ['Avaleht', home?.ok, home?.status ? `OK · ${home.status}` : 'EI VASTA'],
+      ['Portfoolio', portfolio?.ok, portfolio?.status ? `OK · ${portfolio.status}` : 'EI VASTA'],
+      ['Päringuvorm', statuses.contactForm, statuses.contactForm ? 'SEADISTATUD' : 'PUUDUB SEADISTUS'],
+      ['Andmete salvestus', statuses.dataStorage && statuses.imageStorage, statuses.dataStorage && statuses.imageStorage ? 'VALMIS' : 'KONTROLLI']
+    ];
+    healthList.innerHTML = rows.map(([label, ok, status]) => `<li><span>${escapeHtml(label)}</span><b class="${ok ? 'is-ok' : 'is-fail'}">${escapeHtml(status)}</b></li>`).join('');
+    if (healthTime) healthTime.textContent = `Kontrollitud ${formatDateTime(data.checkedAt)} · HTTPS: ${statuses.secureConnection ? 'aktiivne' : 'puudub'}`;
+  }
+
+  function clickLabel(name) {
+    return ({
+      contact_cta: 'Kontakti CTA', contact_submit_click: 'Päringu saatmise nupp', scroll_more: 'Lehe kerimine', service_choice: 'Teenuse valik', project_open: 'Projekti avamine', faq_chat_open: 'FAQ abi avamine', faq_question: 'FAQ küsimus', newsletter_submit: 'Uudiskirjaga liitumine', copy_iban: 'IBAN-i kopeerimine', instagram_open: 'Instagrami avamine', behance_open: 'Behance’i avamine', linkedin_open: 'LinkedIni avamine', email_open: 'E-posti avamine', portfolio_nav: 'Portfoolio navigatsioon'
+    })[name] || name.replace(/_/g, ' ');
+  }
+
+  function formatNumber(value) { return new Intl.NumberFormat('et-EE').format(Number(value || 0)); }
+  function formatDateTime(value) { return value ? new Intl.DateTimeFormat('et-EE', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(value)) : '—'; }
+  function relativeTime(value) {
+    if (!value) return '—';
+    const minutes = Math.round((Date.now() - new Date(value).getTime()) / 60000);
+    if (minutes < 1) return 'just nüüd';
+    if (minutes < 60) return `${minutes} min tagasi`;
+    if (minutes < 1440) return `${Math.floor(minutes / 60)} h tagasi`;
+    return `${Math.floor(minutes / 1440)} p tagasi`;
+  }
+
   requestForm?.addEventListener('submit', event => { event.preventDefault(); requestCode(); });
   verifyForm?.addEventListener('submit', event => { event.preventDefault(); verifyCode(verifyForm.elements.code.value); });
   requestNewCode?.addEventListener('click', () => { challengeId = ''; verifyForm.hidden = true; requestForm.hidden = false; requestCode(); });
@@ -270,6 +405,22 @@
 
   document.querySelector('[data-logout]')?.addEventListener('click', async () => {
     try { await api('/api/admin/login', { method: 'DELETE' }); } finally { location.reload(); }
+  });
+
+  document.querySelector('[data-refresh-dashboard]')?.addEventListener('click', loadDashboard);
+  document.querySelector('[data-run-health]')?.addEventListener('click', runHealthCheck);
+  expiryForm?.addEventListener('submit', async event => {
+    event.preventDefault();
+    setStatus(expiryStatus, 'Salvestan…');
+    try {
+      const data = await api('/api/admin/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ domainExpiry: domainExpiry.value, sslExpiry: sslExpiry.value })
+      });
+      fillExpiry(data.settings);
+      setStatus(expiryStatus, 'Kuupäevad salvestatud.', 'success');
+    } catch (error) { setStatus(expiryStatus, error.message, 'error'); }
   });
 
   (async () => {
