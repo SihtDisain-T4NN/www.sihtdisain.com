@@ -27,6 +27,8 @@
 
   function getClickName(target) {
     if (target.matches('.menu-dot, [data-calc-to-contact]')) return 'contact_cta';
+    if (target.matches('[data-booking-start], [data-audit-to-booking]')) return 'booking_start';
+    if (target.matches('#meeting-form button[type="submit"]')) return 'booking_submit_click';
     if (target.matches('#contact-form button[type="submit"]')) return 'contact_submit_click';
     if (target.matches('.round-link, .portfolio-scroll-cue')) return 'scroll_more';
     if (target.matches('[data-service-choice]')) return 'service_choice';
@@ -41,6 +43,7 @@
     if (target.matches('a[href^="mailto:"]')) return 'email_open';
     if (target.matches('.nav-links a[href*="team"], .mobile-menu-links a[href*="team"]')) return 'team_nav';
     if (target.matches('.nav-links a[href*="portfolio"], .mobile-menu-links a[href*="portfolio"]')) return 'portfolio_nav';
+    if (target.matches('.nav-links a[href*="kohtumine"], .mobile-menu-links a[href*="kohtumine"]')) return 'meeting_nav';
     return '';
   }
 
