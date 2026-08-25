@@ -8,6 +8,11 @@ export function json(payload, status = 200, headers = {}) {
     headers: {
       'Content-Type': 'application/json; charset=UTF-8',
       'Cache-Control': 'no-store',
+      'X-Content-Type-Options': 'nosniff',
+      'X-Frame-Options': 'DENY',
+      'Referrer-Policy': 'no-referrer',
+      'Cross-Origin-Resource-Policy': 'same-origin',
+      'Content-Security-Policy': "default-src 'none'; frame-ancestors 'none'; base-uri 'none'",
       ...headers
     }
   });
@@ -65,6 +70,11 @@ export function getIp(request) {
 export function sameOrigin(request) {
   const origin = request.headers.get('Origin');
   return !origin || origin === new URL(request.url).origin;
+}
+
+export function strictSameOrigin(request) {
+  const origin = request.headers.get('Origin');
+  return Boolean(origin) && origin === new URL(request.url).origin;
 }
 
 export function cleanText(value, maxLength, fallback = '') {
