@@ -85,7 +85,7 @@ export async function onRequestPost({ request, env }) {
   if (!isAllowed) return json({ success: false, error: 'Too many requests' }, 429);
 
   const turnstile = await verifyTurnstile(submission.turnstileToken, ip, env);
-  if (!turnstile.success || (env.TURNSTILE_HOSTNAME && turnstile.hostname !== env.TURNSTILE_HOSTNAME) || turnstile.action !== 'contact-form') {
+  if (!turnstile.success || !isAllowedTurnstileHostname(turnstile.hostname, env.TURNSTILE_HOSTNAME) || turnstile.action !== 'contact-form') {
     console.warn('Contact form Turnstile validation failed.', turnstile['error-codes']);
     return json({ success: false, error: 'Verification failed' }, 403);
   }
@@ -231,6 +231,17 @@ function isValidMeetingDate(value) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
   const date = new Date(`${value}T12:00:00Z`);
   return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value;
+}
+
+function isAllowedTurnstileHostname(hostname, configuredHostnames) {
+  const received = clean(String(hostname || ''), 253).toLowerCase();
+  const allowed = clean(String(configuredHostnames || ''), 800)
+    .toLowerCase()
+    .split(/[\s,]+/)
+    .map(host => host.replace(/^https?:\/\//, '').replace(/\/.*$/, '').replace(/:\d+$/, ''))
+    .filter(Boolean);
+  if (!allowed.length) return true;
+  return allowed.some(host => received === host || (!host.startsWith('www.') && received === `www.${host}`));
 }
 
 function hasRequiredConfiguration(env) {
