@@ -1,4 +1,4 @@
-import { logActivity } from '../lib/insights.js';
+import { logActivity, recordBooking } from '../lib/insights.js';
 
 const CALL_SERVICE = 'Tasuta 15 min kõne';
 const ALLOWED_SERVICES = new Set([
@@ -58,6 +58,7 @@ export async function onRequestPost({ request, env }) {
   const submission = {
     name: clean(body.name, 120),
     email: clean(body.email, 254).toLowerCase(),
+    phone: clean(body.phone, 40),
     company: clean(body.company, 160),
     service: clean(body.service, 80),
     budget: clean(body.budget, 80),
@@ -100,6 +101,14 @@ export async function onRequestPost({ request, env }) {
   if (!emailResponse.ok) {
     console.error('Resend email delivery failed:', emailResponse.status, await emailResponse.text());
     return json({ success: false, error: 'Service unavailable' }, 502);
+  }
+
+  if (submission.service === CALL_SERVICE) {
+    try {
+      await recordBooking(env, submission);
+    } catch (error) {
+      console.warn('Call booking storage failed:', error);
+    }
   }
 
   try {
@@ -149,6 +158,7 @@ async function readSubmission(request) {
     body: {
       name: form.get('name'),
       email: form.get('email'),
+      phone: form.get('phone'),
       company: form.get('company'),
       service: form.get('service'),
       budget: form.get('budget'),
@@ -192,11 +202,12 @@ function clean(value, maxLength) {
     : '';
 }
 
-function isValidSubmission({ name, email, company, service, budget, timeline, message, meetingDate, meetingTime, auditSummary, turnstileToken }) {
+function isValidSubmission({ name, email, phone, company, service, budget, timeline, message, meetingDate, meetingTime, auditSummary, turnstileToken }) {
   const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   return name.length >= 2 && name.length <= 120
     && emailPattern.test(email)
     && email.length <= 254
+    && (!phone || isValidPhone(phone))
     && company.length <= 160
     && ALLOWED_SERVICES.has(service)
     && service.length <= 80
@@ -207,9 +218,13 @@ function isValidSubmission({ name, email, company, service, budget, timeline, me
     && message.length >= 10
     && message.length <= 5000
     && auditSummary.length <= 2000
-    && (service !== CALL_SERVICE || (isValidMeetingDate(meetingDate) && ALLOWED_MEETING_TIMES.has(meetingTime)))
+    && (service !== CALL_SERVICE || (isValidPhone(phone) && isValidMeetingDate(meetingDate) && ALLOWED_MEETING_TIMES.has(meetingTime)))
     && turnstileToken.length > 0
     && turnstileToken.length <= 2048;
+}
+
+function isValidPhone(value) {
+  return typeof value === 'string' && /^[0-9+() .-]{6,40}$/.test(value);
 }
 
 function isValidMeetingDate(value) {
@@ -260,6 +275,7 @@ async function sendEmail(submission, env) {
     'KLIENDI ANDMED',
     `Nimi: ${submission.name}`,
     `E-post: ${submission.email}`,
+    `Telefon: ${submission.phone || 'Pole lisatud'}`,
     `Ettevõte: ${submission.company || 'Pole lisatud'}`,
     '',
     'PROJEKT',
@@ -316,6 +332,7 @@ function createEmailHtml(submission, attachmentNames) {
           ${emailSection('Kliendi andmed', [
             ['Nimi', value(submission.name)],
             ['E-post', `<a href="mailto:${escapeAttribute(submission.email)}" style="color:#141414">${value(submission.email)}</a>`],
+            ['Telefon', value(submission.phone)],
             ['Ettevõte', value(submission.company)]
           ])}
           ${emailSection('Projekt', [
