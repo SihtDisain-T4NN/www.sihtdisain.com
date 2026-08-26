@@ -2,6 +2,7 @@ import { cleanText, getStore } from './admin.js';
 
 const ANALYTICS_TTL_SECONDS = 60 * 60 * 24 * 90;
 const ACTIVITY_TTL_SECONDS = 60 * 60 * 24 * 365;
+const BOOKING_TTL_SECONDS = 60 * 60 * 24 * 365;
 export const ADMIN_SETTINGS_KEY = 'admin:settings';
 
 export async function recordInsight(env, event) {
@@ -33,14 +34,38 @@ export async function logActivity(env, { type, message, actor = 'Veebileht', met
   return true;
 }
 
+// Booking details contain personal data, so they are stored separately from
+// the public analytics stream and are only returned by the authenticated admin
+// dashboard endpoint. They are automatically removed after one year.
+export async function recordBooking(env, booking) {
+  const store = getStore(env);
+  if (!store) return false;
+  const date = new Date();
+  const timestamp = date.toISOString();
+  const newestFirst = String(9_999_999_999_999 - date.getTime()).padStart(13, '0');
+  await store.put(`booking:${newestFirst}:${crypto.randomUUID()}`, JSON.stringify({
+    name: cleanText(booking.name, 120),
+    email: cleanText(booking.email, 254).toLowerCase(),
+    phone: cleanText(booking.phone, 40),
+    company: cleanText(booking.company, 160),
+    meetingDate: cleanText(booking.meetingDate, 20),
+    meetingTime: cleanText(booking.meetingTime, 20),
+    auditSummary: cleanText(booking.auditSummary, 2000),
+    message: cleanText(booking.message, 5000),
+    at: timestamp
+  }), { expirationTtl: BOOKING_TTL_SECONDS });
+  return true;
+}
+
 export async function getDashboardSnapshot(env) {
   const store = getStore(env);
   if (!store) return emptySnapshot();
 
-  const [events, activity, settings] = await Promise.all([
+  const [events, activity, settings, bookings] = await Promise.all([
     recentAnalytics(store, 30),
     listRows(store, 'activity:', 40),
-    getAdminSettings(store)
+    getAdminSettings(store),
+    listRows(store, 'booking:', 30)
   ]);
   const today = dayKey(new Date());
   const week = dateKeys(7);
@@ -60,6 +85,7 @@ export async function getDashboardSnapshot(env) {
     },
     clicks: topClicks(weekEvents),
     activity,
+    bookings,
     settings
   };
 }
@@ -146,6 +172,7 @@ function emptySnapshot() {
     summary: { pageViewsToday: 0, uniqueVisitorsToday: 0, buttonClicksToday: 0, contactRequestsToday: 0, pageViewsWeek: 0, contactRequestsWeek: 0 },
     clicks: [],
     activity: [],
+    bookings: [],
     settings: { domainExpiry: '', sslExpiry: '' }
   };
 }
