@@ -11,6 +11,19 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,700;1,700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="./src/admin.css?v=20260825-1" />
+    <style>
+      .admin-bookings-card{grid-column:1/-1}
+      .admin-booking-list{margin:20px 0 0;padding:0;list-style:none;border-top:1px solid var(--admin-line);max-height:470px;overflow:auto}
+      .admin-booking-list li{display:grid;grid-template-columns:minmax(170px,.78fr) minmax(180px,.75fr) minmax(0,1.55fr);gap:20px;padding:16px 0;border-bottom:1px solid var(--admin-line)}
+      .admin-booking-list strong{display:block;color:#eee;font-size:12px;line-height:1.35}
+      .admin-booking-list small{display:block;margin-top:4px;color:#888;font:400 9px/1.5 'DM Mono',monospace;letter-spacing:.025em}
+      .admin-booking-list small a{color:#c8c8c8;text-decoration-color:#585858;text-underline-offset:3px}
+      .admin-booking-list small a:hover{color:var(--admin-orange)}
+      .admin-booking-audit{min-width:0;padding-left:18px;border-left:1px solid #343434}
+      .admin-booking-audit b{display:block;color:var(--admin-orange);font:500 9px 'DM Mono',monospace;letter-spacing:.09em}
+      .admin-booking-audit p{max-width:740px;margin:7px 0 0;color:#b4b4b4;font-size:11px;line-height:1.55;white-space:normal}
+      @media(max-width:760px){.admin-bookings-card{grid-column:auto}.admin-booking-list li{grid-template-columns:1fr;gap:9px}.admin-booking-audit{padding:12px 0 0;border-top:1px solid #343434;border-left:0}.admin-booking-audit p{font-size:10px}}
+    </style>
   </head>
   <body>
     <main class="admin-shell">
@@ -75,6 +88,12 @@
               <div class="admin-card-head"><div><p>KLIKID / 7 PÄEVA</p><strong>MIS HUVITAB?</strong></div><span class="admin-card-chip" data-clicks-total>—</span></div>
               <ol class="admin-click-list" data-click-list><li><span>Andmed kogunevad pärast avaldamist.</span><b>—</b></li></ol>
               <p class="admin-card-note">Näitab kõige sagedamini vajutatud olulisi tegevusi.</p>
+            </article>
+
+            <article class="admin-dashboard-card admin-bookings-card">
+              <div class="admin-card-head"><div><p>KÕNEBRONEERINGUD &amp; BRÄNDIAUDIT</p><strong>UUSI VESTLUSI</strong></div><span class="admin-card-chip" data-bookings-total>—</span></div>
+              <ol class="admin-booking-list" data-bookings-list><li><div><strong>Broneeringuid veel pole.</strong><small>Uued tasuta kõne taotlused koos aja, kliendi, telefoni ja auditi vastustega ilmuvad siia.</small></div></li></ol>
+              <p class="admin-card-note">Need kontaktandmed on nähtavad ainult pärast omaniku sisselogimist ning säilivad kuni 12 kuud.</p>
             </article>
 
             <article class="admin-dashboard-card admin-activity-card">
