@@ -27,6 +27,8 @@
   const clicksTotal = document.querySelector('[data-clicks-total]');
   const activityList = document.querySelector('[data-activity-list]');
   const activityTotal = document.querySelector('[data-activity-total]');
+  const bookingList = document.querySelector('[data-bookings-list]');
+  const bookingsTotal = document.querySelector('[data-bookings-total]');
   const healthCard = document.querySelector('.admin-health-card');
   const healthTitle = document.querySelector('[data-health-title]');
   const healthCopy = document.querySelector('[data-health-copy]');
@@ -346,7 +348,41 @@
       ? activity.map(item => `<li><span class="admin-activity-mark"></span><div><strong>${escapeHtml(item.message || 'Uus tegevus')}</strong><small>${escapeHtml(item.actor || 'Veebileht')}</small></div><time datetime="${escapeAttribute(item.at || '')}">${escapeHtml(relativeTime(item.at))}</time></li>`).join('')
       : '<li><span class="admin-activity-mark"></span><div><strong>Logi ootab esimest tegevust.</strong><small>Päringud, piltide lisamine ja projektide avaldamine ilmuvad siia.</small></div><time>—</time></li>';
 
+    renderBookings(Array.isArray(data.bookings) ? data.bookings : []);
+
     fillExpiry(data.settings || {});
+  }
+
+  function renderBookings(bookings) {
+    if (!bookingList || !bookingsTotal) return;
+    bookingsTotal.textContent = `${bookings.length} TAOTLUST`;
+    if (!bookings.length) {
+      bookingList.innerHTML = '<li><div><strong>Broneeringuid veel pole.</strong><small>Uued tasuta kõne taotlused koos aja, kliendi, telefoni ja auditi vastustega ilmuvad siia.</small></div></li>';
+      return;
+    }
+
+    bookingList.innerHTML = bookings.map(item => {
+      const phone = String(item.phone || '').replace(/[^0-9+]/g, '');
+      const email = String(item.email || '').trim();
+      const audit = String(item.auditSummary || '').trim();
+      const message = String(item.message || '').trim();
+      const contactBits = [
+        email ? `<a href="mailto:${encodeURIComponent(email)}">${escapeHtml(email)}</a>` : '',
+        phone ? `<a href="tel:${escapeAttribute(phone)}">${escapeHtml(item.phone)}</a>` : '',
+        item.company ? escapeHtml(item.company) : ''
+      ].filter(Boolean).join(' · ');
+      return `<li>
+        <div class="admin-booking-time"><strong>${escapeHtml(formatBookingDateTime(item.meetingDate, item.meetingTime))}</strong><small>Saabus ${escapeHtml(formatDateTime(item.at))}</small></div>
+        <div class="admin-booking-client"><strong>${escapeHtml(item.name || 'Nimi puudub')}</strong><small>${contactBits || 'Kontaktandmed puuduvad'}</small></div>
+        <div class="admin-booking-audit"><b>${audit ? 'BRÄNDIAUDIT' : 'AUDIT TEGEMATA'}</b><p>${escapeHtml(audit || message || 'Klient ei täitnud brändiauditit.')}</p></div>
+      </li>`;
+    }).join('');
+  }
+
+  function formatBookingDateTime(date, time) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(String(date || ''))) return `Aeg täpsustamisel${time ? ` · ${time}` : ''}`;
+    const formatted = new Intl.DateTimeFormat('et-EE', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(`${date}T12:00:00`));
+    return `${formatted} · ${time || 'kellaaeg täpsustamisel'}`;
   }
 
   function fillExpiry(settings) {
